@@ -19,7 +19,8 @@ All Technical Context unknowns are resolved below. Each entry: Decision / Ration
   `GRADIO_ANALYTICS_ENABLED=False` before importing Gradio; use a theme with system fonts only, so
   the browser makes no Google Fonts requests. `--port` (default 7860) and `--data-dir` flags.
 - **Rationale**: Principle II (no network calls after the model download, nothing sent to third
-  parties) and FR-002 (reachable only from the local machine).
+  parties) and FR-002 (reachable only from the local machine). A test captures the `launch()`
+  arguments and the environment to prove it (T046).
 - **Alternatives**: `0.0.0.0` (exposes the UI on the network; out of scope); keeping Gradio's
   default theme (pulls web fonts from the internet).
 
@@ -88,11 +89,17 @@ All Technical Context unknowns are resolved below. Each entry: Decision / Ration
 ## R8. Limits
 
 - **Decision**: 100 MB = 100 × 1024 × 1024 bytes (shown as "100 MB"); 30 minutes = 1800.0 s;
-  values at the limit are accepted. Gradio's `max_file_size` is set to 110 MB as a guard against
-  very large uploads, so the authoritative check, with the actual size in the message, is ours.
+  values at the limit are accepted. Two layers:
+  1. Our submit check (authoritative for 100 MB–110 MB and for duration) names the limit and the
+     file's actual size or duration.
+  2. Gradio's `max_file_size="110mb"` guard stops very large files at upload time, before they are
+     written to disk. Those uploads get Gradio's own "file too large" message, which doesn't show
+     the actual size. The spec accepts this as an edge case, and the audio upload label always shows
+     "max 100 MB, 30 min", so the user knows the limit before uploading.
   Custom masks and words files are capped by the same guard only.
-- **Rationale**: FR-008 / Story 3 scenario 5 need the actual size or duration in the error, which
-  Gradio's built-in limit message doesn't include.
+- **Rationale**: FR-008 / Story 3 scenario 5 need the actual size or duration in the error for
+  files near the limit; for multi-hundred-MB files, refusing the upload early protects disk and
+  memory, which matters more than the exact wording.
 - **Alternatives**: Relying only on Gradio's limit (generic message, no duration check).
 
 ## R9. Job storage and persistence
@@ -112,14 +119,25 @@ All Technical Context unknowns are resolved below. Each entry: Decision / Ration
 
 ## R10. Temporary files and privacy
 
-- **Decision**: At submit, the uploads are copied from Gradio's cache into `jobs/<id>/` (input as
-  `input<ext>`, `words.txt`, `mask<ext>`), so Gradio's cache cleanup can't delete them before the
-  job runs. When the job finishes (done or failed), the worker deletes the copied inputs in a
-  `finally` block. `gr.Blocks(delete_cache=(3600, 3600))` purges Gradio's own upload cache hourly.
-  Deleting a job removes `jobs/<id>/` entirely. Logs contain job ids, statuses and error messages
-  only, never transcripts.
-- **Rationale**: Principle II (temporary files deleted, including on error paths), FR-024, FR-025,
-  SC-009.
+- **Decision**:
+  - **Gradio's cache lives in the data dir**: `main()` sets `GRADIO_TEMP_DIR=<data-dir>/tmp` before
+    importing Gradio, so uploads and files Gradio serves (players, downloads) never land in the
+    system temp dir. That directory is emptied at start-up.
+  - **Uploads are deleted once used**: at submit, the uploads are copied into `jobs/<id>/` (input
+    as `input<ext>`, `words.txt`, `mask<ext>`), and then the submit handler deletes the Gradio
+    upload files (audio, words, custom mask) and clears those form fields. After a validation
+    failure the uploads stay in the form so the user can fix one field without re-uploading; they
+    are still inside `<data-dir>/tmp` and are removed by the cache purge or the next start-up.
+  - **Job input copies are deleted when the job finishes**: the worker deletes them in a `finally`
+    block, on done and on failed.
+  - **Gradio's cache is purged**: `delete_cache=(600, 3600)` removes anything older than an hour
+    every 10 minutes (served result copies, abandoned uploads).
+  - Deleting a job removes `jobs/<id>/` entirely. Logs contain job ids, statuses and error messages
+    only, never transcripts.
+- **Rationale**: Principle II (temporary files deleted after use, including on error paths), FR-024
+  (stored only in the local data directory), FR-025, SC-009 (no input copies remain once a job
+  finishes). Without these steps Gradio would keep a copy of every upload in the system temp dir for
+  up to an hour.
 - **Alternatives**: Processing directly from Gradio's cache path (it can disappear before a queued
   job runs).
 
@@ -127,7 +145,10 @@ All Technical Context unknowns are resolved below. Each entry: Decision / Ration
 
 - **Decision**: `gr.Blocks` with the form at the top and a non-interactive `gr.Dataframe` jobs table
   below it, refreshed by `gr.Timer(2.0)`. `Dataframe.select` stores the selected job id in a
-  per-session `gr.State`. The job details panel (`gr.Audio`, two `gr.DownloadButton`s, a
+  per-session `gr.State`. The id is read from the clicked row's ID cell (`evt.row_value[0]`), never
+  from the row position (`evt.index`): the table is re-rendered newest first every 2 s, so a job
+  added between render and click would shift positions. Rows with an empty ID (the "No jobs yet"
+  hint) are ignored. The job details panel (`gr.Audio`, two `gr.DownloadButton`s, a
   `gr.Markdown` summary and a Delete button) is updated by the same timer only when the selected
   job's `(id, status)` changes; otherwise the handler returns `gr.skip()` for the panel outputs,
   so playback is never interrupted. The Delete button is non-interactive while the job is running,

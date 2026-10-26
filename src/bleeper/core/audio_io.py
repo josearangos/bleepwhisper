@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
+from bleeper.core.atomic import temp_file_for
 from bleeper.core.errors import InvalidInputError, ProcessingError
 
 _PCM_SUBTYPES = {"PCM_S8", "PCM_U8", "PCM_16", "PCM_24", "PCM_32"}
@@ -105,9 +106,7 @@ def _ffmpeg_decode(path: Path, tmp_dir: Path) -> Path:
 def write_wav(path: Path, audio: AudioData) -> None:
     """Write atomically: temp file in the destination directory, then rename."""
     path = Path(path)
-    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    os.close(fd)
-    tmp = Path(name)
+    tmp = temp_file_for(path)
     try:
         sf.write(str(tmp), audio.samples, audio.sample_rate, subtype=audio.subtype, format="WAV")
         os.replace(tmp, path)

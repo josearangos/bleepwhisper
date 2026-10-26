@@ -1,4 +1,6 @@
 import json
+import os
+import stat
 from pathlib import Path
 
 from bleeper.core.models import ReportEntry, Span
@@ -46,3 +48,13 @@ def test_write_report_empty_and_replaces_existing(tmp_path: Path) -> None:
     write_report(path, [])
     assert json.loads(path.read_text(encoding="utf-8")) == []
     assert list(tmp_path.iterdir()) == [path]
+
+
+def test_write_report_uses_default_file_permissions(tmp_path: Path) -> None:
+    path = tmp_path / "report.json"
+    previous = os.umask(0o027)
+    try:
+        write_report(path, [])
+    finally:
+        os.umask(previous)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o640

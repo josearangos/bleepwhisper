@@ -191,6 +191,10 @@ listed; delete a finished job and confirm it and its result files are gone.
 - Downloaded files are named after the original recording (e.g. `interview_masked.wav` and
   `interview_masked.json`) so the user can tell them apart.
 - Audio exactly at the limit (100 MB or 30:00): accepted; anything above is rejected.
+- Audio far above the size limit (over 110 MB): refused by the upload itself, before the file is
+  stored, with a generic "file too large" message that doesn't show the actual size. The audio
+  upload always shows "max 100 MB, 30 min", so the limit is visible before uploading. Files between
+  100 MB and 110 MB get the full message with the actual size.
 - Audio with zero duration or that cannot be inspected at submit time: rejected with a readable
   error.
 - The user changes the form while a job runs: queued and running jobs keep the inputs they were

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
+from bleeper.core.atomic import temp_file_for
 from bleeper.core.errors import ProcessingError
 from bleeper.core.models import ReportEntry, Span
 
@@ -26,16 +26,15 @@ def to_report(spans: Sequence[Span], sample_rate: int) -> list[ReportEntry]:
 def write_report(path: Path, entries: Sequence[ReportEntry]) -> None:
     path = Path(path)
     text = json.dumps([e.to_dict() for e in entries], indent=2, ensure_ascii=False) + "\n"
-    fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp = temp_file_for(path)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(text)
+        tmp.write_text(text, encoding="utf-8")
         os.replace(tmp, path)
     except OSError as exc:
-        Path(tmp).unlink(missing_ok=True)
+        tmp.unlink(missing_ok=True)
         raise ProcessingError(
             f"cannot write report '{path}' ({exc.strerror}). Check free space and permissions."
         ) from exc
     except BaseException:
-        Path(tmp).unlink(missing_ok=True)
+        tmp.unlink(missing_ok=True)
         raise

@@ -89,6 +89,43 @@ count (`ass` never matches `class`). Phrases match consecutive words.
 
 Errors are printed as one `error: ...` line on stderr saying what failed and how to fix it.
 
+## Try it with the samples
+
+The `samples/` folder holds example inputs. Unlike other audio, they are versioned
+(see `.gitignore`); results go to `out/`, which is ignored.
+
+| File | Content |
+|------|---------|
+| `samples/groserias_colombianas.txt` | Common Colombian Spanish profanity, including plurals and the ways Whisper tends to mistranscribe them (`gami`, `mal parido`, `gonorra`) |
+| `samples/mi_audio.wav` | Short Spanish recording (~15 s) |
+| `samples/prueba_parcero.wav` | Longer Spanish recording (~70 s) with many words from the list |
+
+```bash
+mkdir -p out
+bleeper samples/prueba_parcero.wav --words samples/groserias_colombianas.txt \
+  --preset beep -o out/prueba_parcero_limpio.wav --lang es --model large-v3
+afplay out/prueba_parcero_limpio.wav     # macOS; any audio player works
+cat out/prueba_parcero_limpio.json
+```
+
+To record your own sample on macOS, list the input devices and record from the microphone
+(the device index varies per machine):
+
+```bash
+ffmpeg -f avfoundation -list_devices true -i ""          # find the microphone, e.g. [1]
+ffmpeg -f avfoundation -i ":1" -t 60 -ac 1 -ar 44100 samples/my_recording.wav
+```
+
+Tips for slang and profanity:
+
+- Bleeper masks only what Whisper writes, and it never prints the transcript. If a word is
+  missed, add the likely mistranscriptions and splits to the list (e.g. `monorrea` for
+  "gonorrea", or the phrase `hijo de puta` when "hijueputa" is split into words).
+- `--model large-v3` recognizes colloquial Spanish much better than the default `small`, at
+  roughly real-time speed on CPU.
+- Some entries also have innocent meanings (`chimba` = "great", `sapo` = "frog") and are
+  masked in every context.
+
 ## Privacy and offline use
 
 - Transcription runs on your CPU. After the model is cached, Bleeper makes no network calls.

@@ -12,7 +12,8 @@ python -m bleeper.ui [--port PORT] [--data-dir DIR]
 | `--port` | `7860` | Local port to listen on |
 | `--data-dir` | `$BLEEPER_UI_DATA` or `~/.bleeper/ui` | Where `jobs.json` and job files live (created if missing) |
 
-- Binds to `127.0.0.1` only, with no share link and no analytics. It prints
+- Binds to `127.0.0.1` only, with no share link and no analytics. Gradio's cache is
+  `<data-dir>/tmp` (`GRADIO_TEMP_DIR`), emptied at start-up. It prints
   `Bleeper UI running at http://127.0.0.1:<port>` and runs until Ctrl+C.
 - If Gradio isn't installed, it exits with code 1 and prints:
   `error: the web UI needs Gradio. Install it with: pip install "bleeper[ui]"`.
@@ -23,7 +24,7 @@ python -m bleeper.ui [--port PORT] [--data-dir DIR]
 
 | Control | Component | Values |
 |---------|-----------|--------|
-| Audio | `gr.File`, `.wav` `.mp3` | required |
+| Audio | `gr.File`, `.wav` `.mp3`, label `Audio (.wav or .mp3, max 100 MB, 30 min)` | required |
 | Language | `gr.Dropdown` | Auto (default), Spanish, English, Portuguese, French, German, Italian |
 | Forbidden words | `gr.File`, `.txt` | required; CLI format |
 | Mask | `gr.Radio` + one `gr.Audio` preview per preset | Classic beep (default), Low tone, Noise burst |
@@ -34,14 +35,17 @@ python -m bleeper.ui [--port PORT] [--data-dir DIR]
 **Submit result** (always within 1 s; it never waits for processing):
 
 - Success: `✅ Job <id> queued: <filename> (<N> forbidden words, mask: <mask>).` The table
-  refreshes immediately.
-- Failure: `❌ <message>` and no job is created. Messages, in check order:
+  refreshes immediately. The uploaded files are deleted from Gradio's cache and the three upload
+  fields are cleared; language and preset keep their values.
+- Failure: `❌ <message>` and no job is created. The uploads stay in the form, so the user can fix
+  one field and submit again. Messages, in check order:
 
 | Condition | Message |
 |-----------|---------|
 | No audio | `Please upload an audio file (.wav or .mp3).` |
 | Wrong audio type | `Unsupported audio format '<ext>'. Use a .wav or .mp3 file.` |
-| > 100 MB | `'<name>' is <X.X> MB; the limit is 100 MB. Trim or compress the file and try again.` |
+| > 100 MB (up to the 110 MB upload guard) | `'<name>' is <X.X> MB; the limit is 100 MB. Trim or compress the file and try again.` |
+| > 110 MB | Gradio's own upload error (the file is never stored); see the spec's edge cases |
 | Unreadable audio | core `probe_audio` message |
 | Duration 0 | `'<name>' contains no audio. Check the file.` |
 | > 30 min | `'<name>' is <M:SS> long; the limit is 30:00. Split the file and try again.` |
@@ -71,7 +75,9 @@ was corrupt at start-up, a one-time notice appears above the table.
 
 ## Job details panel
 
-Selecting a row opens the panel for that job (the selection is per browser tab).
+Selecting a row opens the panel for that job (the selection is per browser tab). The job is
+identified by the row's ID cell, not by its position, so a refresh or a new job between rendering
+and clicking can't open the wrong job. Clicking the "No jobs yet" hint row does nothing.
 
 | Job status | Panel shows |
 |------------|-------------|

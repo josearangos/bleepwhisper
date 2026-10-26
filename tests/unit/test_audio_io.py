@@ -1,4 +1,6 @@
+import os
 import shutil
+import stat
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -142,3 +144,13 @@ def test_load_mask_resamples_to_target_rate(make_tone: Callable[..., Path], tmp_
 def test_load_mask_missing_file_raises(tmp_path: Path) -> None:
     with pytest.raises(InvalidInputError, match="missing.wav"):
         load_mask(tmp_path / "missing.wav", 16000, tmp_path)
+
+
+def test_write_wav_uses_default_file_permissions(tmp_path: Path) -> None:
+    out = tmp_path / "out.wav"
+    previous = os.umask(0o022)
+    try:
+        write_wav(out, AudioData(np.zeros((10, 1), dtype=np.int32), 8000, "PCM_16"))
+    finally:
+        os.umask(previous)
+    assert stat.S_IMODE(out.stat().st_mode) == 0o644
