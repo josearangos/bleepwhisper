@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bleeper.local/schemas/report.json",
+  "title": "Bleeper masking report",
+  "description": "One entry per masked span (padded, merged, clamped), ordered by start time.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["word", "start", "end"],
+    "properties": {
+      "word": {
+        "type": "string",
+        "description": "Matched transcript word(s); merged spans join words with a single space."
+      },
+      "start": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Start of the masked region in seconds, rounded to milliseconds."
+      },
+      "end": {
+        "type": "number",
+        "minimum": 0,
+        "description": "End of the masked region in seconds, rounded to milliseconds; > start."
+      }
+    }
+  },
+  "examples": [
+    [],
+    [
+      { "word": "darn", "start": 1.92, "end": 2.58 },
+      { "word": "heck heck", "start": 4.1, "end": 5.03 }
+    ]
+  ]
+}
