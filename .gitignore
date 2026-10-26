@@ -9,10 +9,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 
-# Outputs and audio (audio is never committed)
-/out/
-*.wav
-*.mp3
+
 
 # OS / editors
 .DS_Store

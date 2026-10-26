@@ -39,4 +39,9 @@ def find_matches(
             first, last = words[indices[0]], words[indices[-1]]
             found.append((i, size, Match(text, first.start, last.end)))
     found.sort(key=lambda item: (item[0], item[1]))
-    return [match for _, _, match in found]
+    # A match lying entirely inside a longer one ("puta" in "hijo de puta") adds nothing.
+    return [
+        match
+        for i, size, match in found
+        if not any(j <= i and i + size <= j + other and other > size for j, other, _ in found)
+    ]

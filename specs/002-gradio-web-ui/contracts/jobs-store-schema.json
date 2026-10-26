@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bleeper UI jobs store (jobs.json)",
+  "type": "object",
+  "required": ["version", "jobs"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "jobs": {
+      "type": "array",
+      "description": "Newest first.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id", "filename", "language", "language_code", "mask", "status", "progress",
+          "created_at", "finished_at", "error", "masked_count", "output_file", "report_file"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+          "filename": { "type": "string", "minLength": 1 },
+          "language": {
+            "enum": ["Auto", "Spanish", "English", "Portuguese", "French", "German", "Italian"]
+          },
+          "language_code": { "enum": [null, "es", "en", "pt", "fr", "de", "it"] },
+          "mask": { "type": "string", "pattern": "^(beep|tone|noise|custom: .+)$" },
+          "status": { "enum": ["queued", "running", "done", "failed"] },
+          "progress": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "finished_at": { "type": ["string", "null"], "format": "date-time" },
+          "error": { "type": ["string", "null"] },
+          "masked_count": { "type": ["integer", "null"], "minimum": 0 },
+          "output_file": { "type": ["string", "null"], "description": "Relative to the data dir." },
+          "report_file": { "type": ["string", "null"], "description": "Relative to the data dir." }
+        }
+      }
+    }
+  }
+}

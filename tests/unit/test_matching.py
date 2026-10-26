@@ -55,3 +55,18 @@ def test_word_with_inner_space_spans_multiple_tokens() -> None:
         (" shut up", 0.0, 0.8),
     )
     assert find_matches(transcript, parse_words("up")) == [Match("shut up", 0.0, 0.8)]
+
+
+def test_match_inside_a_longer_match_is_dropped() -> None:
+    transcript = words((" hijo", 1.0, 1.2), (" de", 1.2, 1.3), (" puta,", 1.3, 1.6))
+    entries = parse_words("puta\nhijo de puta")
+    assert find_matches(transcript, entries) == [Match("hijo de puta,", 1.0, 1.6)]
+
+
+def test_partially_overlapping_matches_are_kept() -> None:
+    transcript = words((" shut", 0.0, 0.3), (" up", 0.4, 0.6), (" now", 0.7, 0.9))
+    entries = parse_words("shut up\nup now")
+    assert find_matches(transcript, entries) == [
+        Match("shut up", 0.0, 0.6),
+        Match("up now", 0.4, 0.9),
+    ]

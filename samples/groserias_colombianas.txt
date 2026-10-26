@@ -1,0 +1,117 @@
+# Groserías comunes en el español de Colombia.
+# Una palabra o frase por línea. Bleeper ignora mayúsculas, tildes y puntuación,
+# y solo censura palabras completas, así que los plurales y femeninos van aparte.
+# También incluye cómo transcribe Whisper algunas palabras ("gami", "mal parido").
+
+# --- Palabras de prueba (tu primera grabación) ---
+doble
+triple
+dios
+prueba
+sonido
+
+# --- Hijueputa y sus variantes (Whisper a veces lo separa o lo recorta) ---
+hijueputa
+hijueputas
+hijo de puta
+hijos de puta
+hija de puta
+jueputa
+jueputas
+juepucha
+hp
+
+# --- Gonorrea (incluye cómo lo transcribe mal Whisper) ---
+gonorrea
+gonorreas
+gonorreita
+gonorra
+monorrea
+bonorrea
+
+# --- Malparido ---
+malparido
+malparida
+malparidos
+malparidas
+mal parido
+mal parida
+mal paridos
+malnacido
+malnacida
+
+# --- Marica / güevón ---
+marica
+maricas
+maricón
+maricones
+güevón
+güevona
+güevones
+huevón
+huevona
+guevón
+weón
+
+# --- Verga / chimba / monda ---
+verga
+careverga
+vergajo
+carechimba
+chimba
+chimbo
+monda
+mondá
+caremonda
+cara de verga
+cara de chimba
+cara de monda
+
+# --- Pirobo y otros insultos ---
+pirobo
+piroba
+pirobos
+gamín
+gamina
+gamines
+gami
+ñero
+ñera
+lambón
+lambona
+lambones
+lambo
+sapo
+sapos
+perra
+zorra
+perras
+zorras
+puta
+puto
+putas
+culo
+culicagado
+culicagada
+culicargado
+culicargada
+cagada
+mierda
+mierdero
+chucha
+desgraciado
+desgraciada
+pendejo
+pendeja
+pendejos
+pendejas
+imbécil
+idiota
+estúpido
+estúpida
+estúpidos
+estúpidas
+idiotas
+imbéciles
+mamón
+mamona
