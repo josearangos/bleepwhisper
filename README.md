@@ -1,1 +1,135 @@
-# bleepwhisper
+# Bleeper
+
+Mask forbidden words in audio files. Bleeper transcribes a recording locally with
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper) (CPU only), finds the words and phrases
+you list, and replaces each one with a beep, a tone, noise or your own sound. Everything else in
+the recording stays bit-for-bit identical.
+
+## Install
+
+Requires Python ≥ 3.10 and [`ffmpeg`](https://ffmpeg.org/) on `PATH` (used for mp3 input and for
+resampling custom masks).
+
+```bash
+brew install ffmpeg            # or your platform's package manager
+uv venv && source .venv/bin/activate
+uv pip install -e .            # add ".[dev]" for pytest and ruff
+```
+
+The Whisper model (default `small`, ~500 MB) is downloaded once, on the first run.
+
+## Usage
+
+```bash
+bleeper INPUT --words FILE (--mask FILE | --preset {beep,tone,noise}) -o OUTPUT
+        [--model NAME] [--lang CODE] [--padding MS] [--report FILE]
+```
+
+```bash
+bleeper episode.mp3 --words words.txt --preset beep -o out/episode-clean.wav
+```
+
+```text
+Masked 3 spans.
+Output: out/episode-clean.wav
+Report: out/episode-clean.json
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `INPUT` | — | Input audio, `.wav` or `.mp3`. Never modified. |
+| `--words FILE` | — | Forbidden words file (see below). |
+| `--mask FILE` | — | Custom mask sound, looped or trimmed to each span. |
+| `--preset NAME` | — | Built-in mask: `beep` (1 kHz), `tone` (400 Hz), `noise` (white noise). |
+| `-o, --output FILE` | — | Output WAV. Replaced if it exists; must differ from `INPUT`. |
+| `--model NAME` | `small` | faster-whisper model name or local model path. |
+| `--lang CODE` | auto-detect | Spoken language, e.g. `en`, `es`. |
+| `--padding MS` | `80` | Milliseconds added before and after each match. |
+| `--report FILE` | `OUTPUT` with `.json` | JSON report path. |
+
+Exactly one of `--mask` / `--preset` is required. Run `bleeper --help` for the full help.
+
+### Words file
+
+UTF-8 text, one word or phrase per line. Blank lines and lines starting with `#` are ignored.
+
+```text
+# words to bleep
+darn
+heck
+shut up
+```
+
+Matching ignores case, accents and punctuation (`Señor` matches `senor,`), and only whole words
+count (`ass` never matches `class`). Phrases match consecutive words.
+
+### Output
+
+- A WAV with the input's sample rate, channel count and exact duration. mp3 input is written as
+  16-bit WAV.
+- Each match is padded, clamped to the recording, and merged with overlapping or touching
+  neighbours. The mask is level-matched to the surrounding audio (500 ms on each side) and gets
+  10 ms fades in and out.
+- A JSON report with one entry per masked span (times in seconds):
+
+  ```json
+  [
+    { "word": "darn", "start": 1.92, "end": 2.58 },
+    { "word": "heck heck", "start": 4.1, "end": 5.03 }
+  ]
+  ```
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success, including "no forbidden words found" |
+| `1` | Invalid input: missing or bad files or options, output equal to input, ffmpeg missing |
+| `2` | Processing error: model load, transcription, ffmpeg or write failure |
+
+Errors are printed as one `error: ...` line on stderr saying what failed and how to fix it.
+
+## Privacy and offline use
+
+- Transcription runs on your CPU. After the model is cached, Bleeper makes no network calls.
+- Audio and transcripts are never logged or uploaded; only counts and paths are printed.
+- Temporary files are removed whether the run succeeds or fails, and a failed run leaves no
+  partial output.
+
+## Python API
+
+```python
+from bleeper.core import process_audio
+
+
+def on_progress(stage: str, fraction: float) -> None:
+    print(f"{stage}: {fraction:.0%}")
+
+
+result = process_audio(
+    "episode.wav",
+    "words.txt",
+    "episode-clean.wav",
+    preset="beep",  # or mask_path="quack.wav"
+    language="en",
+    progress=on_progress,  # stages: loading, transcribing, masking, writing, done
+)
+for entry in result.report:
+    print(entry.word, entry.start, entry.end)
+```
+
+Errors are raised as `InvalidInputError` or `ProcessingError` (both subclass `BleeperError`).
+The CLI and the API produce byte-identical output for the same inputs.
+
+## Development
+
+```bash
+ruff format --check . && ruff check .
+pytest                  # offline, no model needed
+pytest -m whisper       # optional: real-model tests (need a cached model, macOS `say`, ffmpeg)
+```
+
+## Known limitations
+
+- Digits and spelled-out numbers are not equivalent: `5` does not match `five`.
+- Matching depends on Whisper's transcript; misheard words are not masked.

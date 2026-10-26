@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bleeper"
+version = "0.1.0"
+description = "Mask forbidden words in audio files using faster-whisper, offline on CPU."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "faster-whisper",
+    # Not a new dependency: faster-whisper already installs PyAV, but its decoder (1.2.1) passes
+    # `metadata_errors` to av.open(), which PyAV 19 removed. Drop this cap once that is fixed.
+    "av<19",
+    "numpy",
+    "soundfile",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+bleeper = "bleeper.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["specs", ".specify", ".claude"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ANN"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["whisper: requires a downloaded Whisper model"]
+addopts = "-m 'not whisper'"
