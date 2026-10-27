@@ -1,4 +1,4 @@
-"""Gradio layout and event handlers (the only module that imports Gradio)."""
+"""Gradio layout and event handlers (Gradio is imported only here and in theme.py)."""
 
 from __future__ import annotations
 
@@ -14,7 +14,9 @@ import numpy as np
 
 from bleeper.core import InvalidInputError, load_words, preset_preview
 from bleeper.ui.jobs import Job, JobBusyError, JobStatus, JobStore
-from bleeper.ui.submit import LANGUAGES, MASKS, MAX_UPLOAD_MB, create_job
+from bleeper.ui.submit import LANGUAGES, MASKS, create_job
+from bleeper.ui.theme import WAVEFORM, color_status
+from bleeper.ui.submit import MAX_UPLOAD_MB
 from bleeper.ui.worker import JobWorker
 
 TABLE_HEADERS = [
@@ -35,11 +37,6 @@ FILES_MISSING = "The result files for this job are no longer available."
 RUNNING_NOTE = "This job can be deleted once it finishes."
 PREVIEW_RATE = 44100
 REFRESH_SECONDS = 2.0
-# System fonts only: the default theme would fetch Google Fonts.
-THEME = gr.themes.Default(
-    font=["ui-sans-serif", "system-ui", "sans-serif"],
-    font_mono=["ui-monospace", "monospace"],
-)
 
 Signature = tuple[str | None, str | None]
 
@@ -199,7 +196,12 @@ def build_app(store: JobStore, worker: JobWorker) -> gr.Blocks:
                 preset = gr.Radio(list(MASKS), value="Classic beep", label="Mask")
                 with gr.Row():
                     for label, value in zip(MASKS, preview_values(), strict=True):
-                        gr.Audio(value=value, label=f"Preview: {label}", interactive=False)
+                        gr.Audio(
+                            value=value,
+                            label=f"Preview: {label}",
+                            interactive=False,
+                            waveform_options=WAVEFORM,
+                        )
                 custom_mask = gr.File(
                     label="Custom mask (optional, overrides the preset)",
                     file_types=[".wav", ".mp3"],
@@ -216,6 +218,8 @@ def build_app(store: JobStore, worker: JobWorker) -> gr.Blocks:
             label="Jobs",
             wrap=True,
         )
+        table.postprocess = color_status(table.postprocess, TABLE_HEADERS.index("Status"))
+        table.value = table.postprocess(render_table(store)).model_dump()
 
         empty = render_details(store, None)
         selected = gr.State(None)
@@ -223,7 +227,11 @@ def build_app(store: JobStore, worker: JobWorker) -> gr.Blocks:
         with gr.Group():
             summary = gr.Markdown(empty.summary_md)
             player = gr.Audio(
-                type="filepath", interactive=False, label="Masked audio", visible=False
+                type="filepath",
+                interactive=False,
+                label="Masked audio",
+                visible=False,
+                waveform_options=WAVEFORM,
             )
             with gr.Row():
                 wav_download = gr.DownloadButton("Download audio", visible=False)

@@ -19,5 +19,8 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local tooling
+.archify/
+uv.lock
 # Docker
 data/
