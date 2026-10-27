@@ -121,3 +121,25 @@ def test_load_failure_raises_processing_error(monkeypatch: pytest.MonkeyPatch) -
 def test_invalid_language_raises_invalid_input(loader: list[dict[str, object]]) -> None:
     with pytest.raises(InvalidInputError, match="xx"):
         WhisperTranscriber("tiny").transcribe(Path("a.wav"), "xx", lambda f: None)
+
+
+def test_offline_missing_model_explains_rebuild(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[bool] = []
+
+    def create(name: str, **kwargs: object) -> StubModel:
+        calls.append(bool(kwargs["local_files_only"]))
+        raise OSError("not cached")
+
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setenv("BLEEPER_MODEL", "small")
+    transcribe.load_model.cache_clear()
+    monkeypatch.setattr(transcribe, "WhisperModel", create)
+    with pytest.raises(ProcessingError) as info:
+        transcribe.load_model("tiny")
+    transcribe.load_model.cache_clear()
+    message = str(info.value)
+    assert "'tiny'" in message
+    assert "not available offline" in message
+    assert "'small'" in message
+    assert "--build-arg WHISPER_MODEL=tiny" in message
+    assert calls == [True]
