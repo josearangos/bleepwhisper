@@ -5,6 +5,8 @@ Mask forbidden words in audio files. Bleeper transcribes a recording locally wit
 you list, and replaces each one with a beep, a tone, noise or your own sound. Everything else in
 the recording stays bit-for-bit identical.
 
+![Bleeper runtime architecture: audio, words and mask flow through faster-whisper, the matcher and the masker to a masked WAV and a JSON report; the CLI and Gradio UI share the same core](docs/architecture.png)
+
 ## Install
 
 Requires Python ≥ 3.10 and [`ffmpeg`](https://ffmpeg.org/) on `PATH` (used for mp3 input and for
@@ -130,6 +132,8 @@ Tips for slang and profanity:
 
 A local browser UI runs the same masking as background jobs, so you can queue several files and
 keep using the page while they process.
+
+![Bleeper web UI with the dark "Censor bar" theme](docs/ui-screenshot.png)
 
 ```bash
 uv pip install -e ".[ui]"      # adds Gradio

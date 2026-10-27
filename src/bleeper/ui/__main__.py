@@ -40,7 +40,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import gradio  # noqa: F401
 
-        from bleeper.ui.app import THEME, build_app
+        from bleeper.ui.app import build_app
+        from bleeper.ui.theme import CSS, THEME
     except ImportError:
         print(
             'error: the web UI needs Gradio. Install it with: pip install "bleeper[ui]"',
@@ -66,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
             footer_links=["gradio", "settings"],
             allowed_paths=[str(data_dir)],
             theme=THEME,
+            css=CSS,
         )
     except OSError as exc:
         print(
