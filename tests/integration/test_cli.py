@@ -404,3 +404,16 @@ def test_cli_and_api_outputs_are_byte_identical(
     pipeline.process_audio(src, wordlist, api_out, transcriber=fake_transcriber(words), **kwargs)
     assert cli_out.read_bytes() == api_out.read_bytes()
     assert cli_out.with_suffix(".json").read_bytes() == api_out.with_suffix(".json").read_bytes()
+
+
+def test_model_default_comes_from_env(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = ["in.wav", "--words", "w.txt", "--preset", "beep", "-o", "out.wav"]
+    monkeypatch.delenv("BLEEPER_MODEL", raising=False)
+    assert cli.build_parser().parse_args(args).model == "small"
+    monkeypatch.setenv("BLEEPER_MODEL", "base")
+    assert cli.build_parser().parse_args(args).model == "base"
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args(["--help"])
+    assert "--model" in capsys.readouterr().out

@@ -22,3 +22,5 @@ Thumbs.db
 # Local tooling
 .archify/
 uv.lock
+# Docker
+data/

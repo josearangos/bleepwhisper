@@ -140,23 +140,18 @@ Current state that drives these decisions (read from the code on 2026-10-27):
     (d) output differs from input inside that span; plus (e) image size < 2 GB via
     `docker image inspect`. Clarification Q2. Each failure prints `FAIL: <check>` and exits 1.
   - `set -euo pipefail`, a `trap` removes the temp dir, `SMOKE_IMAGE` (default `bleeper:smoke`) and
-    `SMOKE_BUILD_ARGS` (extra args for `docker buildx build`, used by CI for the GHA cache) are the
-    only knobs.
+    `SMOKE_BUILD_ARGS` (extra args for `docker buildx build`) are the only knobs.
 - **Risk & mitigation**: espeak's voice is robotic. "The quick brown fox…" is the most common English
   test sentence; Whisper `small` with `--lang en` must transcribe "fox" — verify once during
   implementation. If it does not, slow the voice (`-s 120`) and/or use a pangram with a longer known
   word (e.g. "elephant"); the known word is a single variable in the script.
 - **Alternatives**: committed fixture / existing sample (rejected in Q3).
 
-## R9. CI workflow
+## R9. CI workflow (dropped)
 
-- **Decision**: `.github/workflows/docker-smoke.yml`, `on: [push, pull_request]`, `ubuntu-latest`
-  (x86), `docker/setup-buildx-action`, then `SMOKE_BUILD_ARGS="--cache-from type=gha --cache-to
-  type=gha,mode=max --load" scripts/smoke.sh`. Actions pinned by major version; `permissions:
-  contents: read`; nothing pushed. README badge points at this workflow. Clarification Q4.
-- **Rationale**: The runner's UID is 1001, so CI exercises the UID override path from Q1 for free.
-  The GHA cache keeps the model layer warm, so repeat runs skip the ~480 MB download.
-- **Alternatives**: duplicate build steps in YAML (two sources of truth with `smoke.sh`).
+- **Decision**: No CI workflow in this feature. It was removed after implementation; `scripts/smoke.sh`
+  is run by hand.
+- **Alternatives**: a GitHub Actions workflow running `scripts/smoke.sh` with the GHA build cache.
 
 ## R10. Build context
 
@@ -166,3 +161,13 @@ Current state that drives these decisions (read from the code on 2026-10-27):
 - **Rationale**: Robust to new untracked files (audio in `samples/`, `out/`, `.venv`, `.git`,
   `.specify`, `data/`) — nothing enters the context unless named. Context stays < 1 MB.
 - **Alternatives**: deny-list (silently grows as people add files).
+
+
+## Measured results (2026-10-27)
+
+- **R4 image size**: estimate ~1.4 GB, actual 1,655,056,520 bytes (~1.66 GB, under the 2 GB limit).
+  A first build was 2.75 GB because `chmod -R` in the runtime stage duplicated the copied layers;
+  permissions are now set in the `builder` and `model` stages instead.
+- **R8 TTS**: `espeak-ng -v en-us -s 140` with "The quick brown fox jumps over the lazy dog." and
+  WORD `fox` worked first time; no mitigation was needed. Base image pinned to
+  `python:3.11.18-slim-trixie@sha256:8220...` and TTS to `debian:trixie-slim@sha256:62bd...`.

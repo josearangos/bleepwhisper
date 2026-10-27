@@ -7,6 +7,7 @@ import shutil
 import uuid
 from pathlib import Path
 
+from bleeper import settings
 from bleeper.core import InvalidInputError, load_words, probe_audio
 from bleeper.ui.jobs import Job, JobStatus, JobStore, now
 
@@ -21,9 +22,10 @@ LANGUAGES: dict[str, str | None] = {
 }
 MASKS: dict[str, str] = {"Classic beep": "beep", "Low tone": "tone", "Noise burst": "noise"}
 
-MAX_BYTES = 100 * 1024 * 1024
+MAX_UPLOAD_MB = settings.max_upload_mb()
+MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 MAX_SECONDS = 1800.0
-MODEL = "small"
+MODEL = settings.default_model()
 PADDING_MS = 80
 AUDIO_SUFFIXES = {".wav", ".mp3"}
 
@@ -85,7 +87,7 @@ def validate_submission(
     size = audio.stat().st_size
     if size > MAX_BYTES:
         raise InvalidInputError(
-            f"'{name}' is {size / 1024**2:.1f} MB; the limit is 100 MB. "
+            f"'{name}' is {size / 1024**2:.1f} MB; the limit is {MAX_BYTES / 1024**2:g} MB. "
             "Trim or compress the file and try again."
         )
     try:

@@ -8,16 +8,21 @@ import shutil
 import sys
 from pathlib import Path
 
-HOST = "127.0.0.1"
+from bleeper import settings
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(default_port: int = 7860) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="bleeper-ui",
         description="Local web UI for Bleeper: mask forbidden words in audio, offline.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--port", type=int, default=7860, help="local port to listen on")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=default_port,
+        help="local port to listen on (env: BLEEPER_UI_PORT)",
+    )
     parser.add_argument(
         "--data-dir",
         default=os.environ.get("BLEEPER_UI_DATA", "~/.bleeper/ui"),
@@ -28,7 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    try:
+        host, port, upload_mb = settings.ui_host(), settings.ui_port(), settings.max_upload_mb()
+    except settings.SettingsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    args = build_parser(port).parse_args(argv)
     data_dir = Path(args.data_dir).expanduser()
     data_dir.mkdir(parents=True, exist_ok=True)
     # Gradio reads these at import time: no analytics, and its upload cache in the data dir.
@@ -56,14 +66,14 @@ def main(argv: list[str] | None = None) -> int:
     worker = JobWorker(store)
     worker.start()
     demo = build_app(store, worker)
-    print(f"Bleeper UI running at http://{HOST}:{args.port}")
+    print(f"Bleeper UI running at http://{host}:{args.port}")
     try:
         demo.launch(
-            server_name=HOST,
+            server_name=host,
             server_port=args.port,
             share=False,
             quiet=True,
-            max_file_size="110mb",
+            max_file_size=f"{upload_mb + 10}mb",
             footer_links=["gradio", "settings"],
             allowed_paths=[str(data_dir)],
             theme=THEME,

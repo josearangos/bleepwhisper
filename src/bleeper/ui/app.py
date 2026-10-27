@@ -16,6 +16,7 @@ from bleeper.core import InvalidInputError, load_words, preset_preview
 from bleeper.ui.jobs import Job, JobBusyError, JobStatus, JobStore
 from bleeper.ui.submit import LANGUAGES, MASKS, create_job
 from bleeper.ui.theme import WAVEFORM, color_status
+from bleeper.ui.submit import MAX_UPLOAD_MB
 from bleeper.ui.worker import JobWorker
 
 TABLE_HEADERS = [
@@ -185,7 +186,7 @@ def build_app(store: JobStore, worker: JobWorker) -> gr.Blocks:
         with gr.Row():
             with gr.Column():
                 audio = gr.File(
-                    label="Audio (.wav or .mp3, max 100 MB, 30 min)",
+                    label=f"Audio (.wav or .mp3, max {MAX_UPLOAD_MB} MB, 30 min)",
                     file_types=[".wav", ".mp3"],
                     type="filepath",
                 )

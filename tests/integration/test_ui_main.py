@@ -95,3 +95,52 @@ def test_busy_port(
         monkeypatch.setenv(name, os.environ.get(name, ""))
     assert launcher.main(["--data-dir", str(tmp_path)]) == 1
     assert "--port" in capsys.readouterr().err
+
+
+def test_defaults_without_env(
+    monkeypatch: pytest.MonkeyPatch, launches: list[dict[str, Any]], tmp_path: Path
+) -> None:
+    for name in ("BLEEPER_UI_HOST", "BLEEPER_UI_PORT", "BLEEPER_UI_MAX_UPLOAD_MB"):
+        monkeypatch.delenv(name, raising=False)
+    assert launcher.main(["--data-dir", str(tmp_path)]) == 0
+    (kwargs,) = launches
+    assert kwargs["server_name"] == "127.0.0.1"
+    assert kwargs["server_port"] == 7860
+    assert kwargs["max_file_size"] == "110mb"
+
+
+def test_env_sets_host_port_and_limit(
+    monkeypatch: pytest.MonkeyPatch,
+    launches: list[dict[str, Any]],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("BLEEPER_UI_HOST", "0.0.0.0")
+    monkeypatch.setenv("BLEEPER_UI_PORT", "8081")
+    monkeypatch.setenv("BLEEPER_UI_MAX_UPLOAD_MB", "5")
+    assert launcher.main(["--data-dir", str(tmp_path)]) == 0
+    (kwargs,) = launches
+    assert kwargs["server_name"] == "0.0.0.0"
+    assert kwargs["server_port"] == 8081
+    assert kwargs["max_file_size"] == "15mb"
+    assert capsys.readouterr().out.strip() == "Bleeper UI running at http://0.0.0.0:8081"
+
+
+def test_explicit_port_beats_env(
+    monkeypatch: pytest.MonkeyPatch, launches: list[dict[str, Any]], tmp_path: Path
+) -> None:
+    monkeypatch.setenv("BLEEPER_UI_PORT", "8081")
+    assert launcher.main(["--data-dir", str(tmp_path), "--port", "9000"]) == 0
+    assert launches[0]["server_port"] == 9000
+
+
+def test_invalid_env_port(
+    monkeypatch: pytest.MonkeyPatch,
+    launches: list[dict[str, Any]],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("BLEEPER_UI_PORT", "abc")
+    assert launcher.main(["--data-dir", str(tmp_path)]) == 1
+    assert "error:" in capsys.readouterr().err
+    assert not launches

@@ -91,6 +91,75 @@ count (`ass` never matches `class`). Phrases match consecutive words.
 
 Errors are printed as one `error: ...` line on stderr saying what failed and how to fix it.
 
+## Run with Docker
+
+No Python, ffmpeg or model download needed: the image bundles everything (CPU only, about 1.7 GB)
+and runs fully offline.
+
+### Build
+
+```bash
+docker compose build
+docker compose build --build-arg WHISPER_MODEL=base   # bake a different Whisper model
+```
+
+The model is baked into the image, so switching models needs a rebuild.
+
+### Prepare data
+
+```bash
+mkdir -p data
+cp my-recording.wav data/input.wav
+printf 'heck\n' > data/words.txt
+```
+
+Inside the container these live under `/data`, so pass paths as `/data/...`.
+
+### CLI
+
+```bash
+docker compose run --rm cli /data/input.wav --words /data/words.txt --preset beep -o /data/output.wav
+```
+
+This writes `data/output.wav` and `data/output.json`. Add `--network none` to prove it works
+offline (`docker run --rm --network none -v "$PWD/data:/data" bleeper:local ...`). Exit codes match
+the native CLI.
+
+### Linux file ownership
+
+Files are written as UID/GID 1000 by default. To own them yourself, prefix the command with
+`BLEEPER_UID=$(id -u) BLEEPER_GID=$(id -g)` or put both in a `.env` file. (`UID` itself can't be
+used: it is a read-only variable in bash.)
+
+### Web UI
+
+```bash
+docker compose up -d ui      # then open http://localhost:7860
+docker compose logs -f ui
+docker compose down          # keeps your jobs
+docker compose down -v       # also deletes them
+```
+
+The UI is reachable only from this machine (`127.0.0.1`). Change the host port with
+`BLEEPER_UI_HOST_PORT=8080 docker compose up -d ui`.
+
+| Variable | Container default | Native default | Meaning |
+|---|---|---|---|
+| `BLEEPER_MODEL` | the build-time model (`small`) | `small` | default Whisper model |
+| `BLEEPER_UI_HOST` | `0.0.0.0` | `127.0.0.1` | address the UI listens on |
+| `BLEEPER_UI_PORT` | `7860` | `7860` | port the UI listens on |
+| `BLEEPER_UI_MAX_UPLOAD_MB` | `100` | `100` | upload size limit |
+| `BLEEPER_UI_DATA` | `/var/lib/bleeper` | `~/.bleeper/ui` | where jobs are stored |
+
+### Verify your setup
+
+```bash
+scripts/smoke.sh
+```
+
+It builds the image, generates a spoken sentence, masks one word with `--network none`, and checks
+the output keeps its length, sample rate and channels, and changes only inside the reported span.
+
 ## Try it with the samples
 
 The `samples/` folder holds example inputs. Unlike other audio, they are versioned
@@ -170,6 +239,9 @@ Data directory layout:
 ```
 
 Uploaded inputs are copied into the job's folder and deleted as soon as the job finishes.
+
+The native UI reads the same `BLEEPER_MODEL`, `BLEEPER_UI_HOST` (default `127.0.0.1`),
+`BLEEPER_UI_PORT` (default `7860`) and `BLEEPER_UI_MAX_UPLOAD_MB` (default `100`) variables.
 
 ## Privacy and offline use
 
