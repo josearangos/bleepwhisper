@@ -4,7 +4,7 @@
 
 ```bash
 scripts/smoke.sh
-SMOKE_IMAGE=bleeper:test SMOKE_BUILD_ARGS="--cache-from type=gha --cache-to type=gha,mode=max --load" scripts/smoke.sh
+SMOKE_IMAGE=bleeper:test SMOKE_BUILD_ARGS="--build-arg WHISPER_MODEL=base" scripts/smoke.sh
 ```
 
 | Input | Default | Meaning |

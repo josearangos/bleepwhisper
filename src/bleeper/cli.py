@@ -6,6 +6,7 @@ import argparse
 import sys
 from typing import NoReturn
 
+from bleeper import settings
 from bleeper.core import PRESETS, InvalidInputError, ProcessingError, process_audio
 
 EXIT_CODES = "Exit codes: 0 success, 1 invalid input, 2 processing error."
@@ -63,7 +64,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="output WAV path; replaced if it exists, must differ from INPUT",
     )
-    parser.add_argument("--model", default="small", help="faster-whisper model name or local path")
+    parser.add_argument(
+        "--model",
+        default=settings.default_model(),
+        help="faster-whisper model name or local path (env: BLEEPER_MODEL)",
+    )
     parser.add_argument(
         "--lang", metavar="CODE", help="spoken language code, e.g. es or en (default: auto-detect)"
     )

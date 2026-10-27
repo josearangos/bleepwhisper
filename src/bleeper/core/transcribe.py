@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Protocol
@@ -30,6 +31,13 @@ def load_model(name: str) -> Any:  # noqa: ANN401 - faster-whisper model object
         return WhisperModel(name, **options, local_files_only=True)
     except Exception:  # noqa: BLE001 - not cached (or not loadable offline): try downloading
         pass
+    if os.environ.get("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes", "on"}:
+        baked = os.environ.get("BLEEPER_MODEL", "its build-time model")
+        raise ProcessingError(
+            f"Whisper model '{name}' is not available offline (HF_HUB_OFFLINE is set). In Docker "
+            f"this image contains '{baked}'; rebuild with: docker compose build --build-arg "
+            f"WHISPER_MODEL={name}. Natively, unset HF_HUB_OFFLINE once so it can be downloaded."
+        )
     try:
         return WhisperModel(name, **options, local_files_only=False)
     except Exception as exc:

@@ -15,8 +15,7 @@ one-shot `cli` service (`./data` ↔ `/data`) and a `ui` service bound to `127.0
 health check and a named volume. The only Python changes are in the interface layer: a new
 `bleeper/settings.py` makes model, UI host, port and upload limit env-configurable (native defaults
 unchanged), plus a clearer offline error in `load_model`. `scripts/smoke.sh` proves it end-to-end
-(espeak-ng speech → offline masking → checks), and a GitHub Actions workflow runs it on every push
-and pull request. See [research.md](research.md) for each decision.
+(espeak-ng speech → offline masking → checks). See [research.md](research.md) for each decision.
 
 ## Technical Context
 
@@ -31,15 +30,14 @@ generation), espeak-ng (smoke test only, in a throwaway container).
 existing `jobs.json` + job directories, baked HF model cache `/opt/hf`.
 
 **Testing**: pytest (new unit tests for `settings.py`, updated UI launcher/submit tests, offline
-error test); `scripts/smoke.sh` end-to-end; GitHub Actions running the smoke script.
+error test); `scripts/smoke.sh` end-to-end.
 
 **Target Platform**: Linux containers on linux/amd64 and linux/arm64 hosts (Docker Desktop on
 macOS/Windows, Docker Engine on Linux). CPU only.
 
 **Project Type**: CLI tool + local web UI (single Python package) with container packaging.
 
-**Performance Goals**: Smoke script < 15 min on a laptop excluding base-image pull (SC-007); cached
-CI re-runs dominated by the masking step (~1 min).
+**Performance Goals**: Smoke script < 15 min on a laptop excluding base-image pull (SC-007).
 
 **Constraints**: Image < 2 GB (FR-008, est. ~1.4 GB); zero network at run time; non-root; native
 behavior unchanged when no env vars are set; no new runtime dependencies.
@@ -89,8 +87,7 @@ Dockerfile                         # NEW: builder → model → runtime, non-roo
 docker-compose.yml                 # NEW: cli (profile, ./data) + ui (127.0.0.1:7860, healthcheck, volume)
 requirements.lock                  # NEW: uv universal, hashed, py3.11, ui extra
 .gitignore                         # CHANGED: add data/
-README.md                          # CHANGED: "Run with Docker" section + CI badge + env var table
-.github/workflows/docker-smoke.yml # NEW: buildx + GHA cache + scripts/smoke.sh on push/PR
+README.md                          # CHANGED: "Run with Docker" section + env var table
 
 scripts/
 ├── lock.sh                        # NEW: regenerate requirements.lock
@@ -115,7 +112,7 @@ tests/
 ```
 
 **Structure Decision**: Keep the existing single-package layout (`src/bleeper`, `tests/`). Container
-and CI files live at the repository root where Docker, Compose and GitHub expect them; helper
+files live at the repository root where Docker, Compose and GitHub expect them; helper
 scripts go in a new `scripts/` folder. No new Python package.
 
 ## Complexity Tracking

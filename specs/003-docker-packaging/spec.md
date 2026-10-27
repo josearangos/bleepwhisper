@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Containerize bleeper (CLI and Gradio UI) so anyone can run it with identical results on any machine. As a developer or recruiter, I clone the repo and run bleeper with one Docker command, without installing Python, ffmpeg or Whisper dependencies. Single multi-stage Dockerfile, CPU-only, pinned python:3.11-slim base with ffmpeg; dependencies from a pinned lock file; Whisper model (default small, build arg WHISPER_MODEL) baked in at build time so the container runs fully offline; non-root user; docker-compose.yml with a one-shot `cli` service (./data mounted at /data) and a `ui` service (bound to 0.0.0.0 inside, published only on 127.0.0.1:7860, healthcheck, volume for jobs and results); .dockerignore; environment variables for model name, port and max upload size; scripts/smoke.sh that builds, generates synthetic audio with a known word, runs the CLI with --network none and checks the output exists with the same duration; optional GitHub Actions workflow running the smoke test on every push; README section 'Run with Docker'; image under 2 GB. Out of scope: GPU/CUDA images, Kubernetes, registry publishing, cloud deployment."
+**Input**: User description: "Containerize bleeper (CLI and Gradio UI) so anyone can run it with identical results on any machine. As a developer or recruiter, I clone the repo and run bleeper with one Docker command, without installing Python, ffmpeg or Whisper dependencies. Single multi-stage Dockerfile, CPU-only, pinned python:3.11-slim base with ffmpeg; dependencies from a pinned lock file; Whisper model (default small, build arg WHISPER_MODEL) baked in at build time so the container runs fully offline; non-root user; docker-compose.yml with a one-shot `cli` service (./data mounted at /data) and a `ui` service (bound to 0.0.0.0 inside, published only on 127.0.0.1:7860, healthcheck, volume for jobs and results); .dockerignore; environment variables for model name, port and max upload size; scripts/smoke.sh that builds, generates synthetic audio with a known word, runs the CLI with --network none and checks the output exists with the same duration; README section 'Run with Docker'; image under 2 GB. Out of scope: GPU/CUDA images, Kubernetes, registry publishing, cloud deployment."
 
 ## Clarifications
 
@@ -15,7 +15,7 @@
 - Q: When the container writes masked files into `./data`, whose user ID should own them? → A: Fixed non-root user with UID/GID 1000 by default; the `cli` service can be run as the host user's ID by setting `BLEEPER_UID`/`BLEEPER_GID` environment variables, documented in the README. (Named `BLEEPER_UID`/`BLEEPER_GID` rather than `UID`/`GID` during planning, because `UID` is read-only in bash.)
 - Q: Besides output existence and duration, should the smoke script verify the known word was actually masked? → A: Yes: the report must list at least one span for the known word, and the output must differ from the input inside that span (no reference checksum).
 - Q: Where does the smoke test get real speech containing the known word? → A: Generated at test time with an open-source text-to-speech engine (espeak-ng) in a throwaway container; no audio is committed and nothing is added to the runtime image.
-- Q: Should this feature ship the GitHub Actions workflow? → A: Yes, in scope: `.github/workflows/docker-smoke.yml` runs `scripts/smoke.sh` on every push and pull request with build caching, plus a README status badge.
+- Q: Should this feature ship the GitHub Actions workflow? → A: No. Dropped after implementation; the smoke script is run by hand.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -80,7 +80,7 @@ From another machine on the same network, confirm the port is not reachable.
 
 ### User Story 3 - Prove reproducibility automatically (Priority: P3)
 
-A maintainer (or CI on every push and pull request) runs one script that builds the image, creates a short
+A maintainer runs one script that builds the image, creates a short
 synthetic audio clip containing a known word, masks it inside the container with networking
 disabled, and verifies the result. The script exits `0` on success and non-zero with a clear
 message on any failure.
@@ -99,8 +99,6 @@ break the image (e.g. remove the model) and check it exits non-zero with a reada
 2. **Given** any step fails (build, run, missing output, duration mismatch, known word not
    reported or not masked), **When** the smoke
    script runs, **Then** it stops, prints which check failed, and exits non-zero.
-3. **Given** a push or pull request, **When** the CI workflow runs, **Then** it builds the image and
-   runs the smoke script, failing the check if the script fails.
 
 ---
 
@@ -182,9 +180,7 @@ break the image (e.g. remove the model) and check it exits non-zero with a reada
   channel count as the input; (c) the JSON report lists at least one masked span for the known word;
   and (d) the output samples differ from the input inside that span. It MUST NOT compare against a
   stored checksum. It MUST exit `0` only if every check passes and print which check failed otherwise.
-- **FR-017**: The project MUST provide a CI workflow (`.github/workflows/docker-smoke.yml`) that runs
-  the smoke script on every push and pull request, reuses a build cache between runs, fails the
-  check when the script fails, and never publishes the image. The README MUST show its status badge.
+- **FR-017**: Removed. No CI workflow is part of this feature.
 - **FR-018**: The README MUST contain a "Run with Docker" section covering: building the image
   (including choosing another model), preparing `./data`, the CLI command, starting/stopping the UI,
   where UI data persists, and changing the published port.
@@ -236,5 +232,4 @@ break the image (e.g. remove the model) and check it exits non-zero with a reada
 - The jobs volume is a named volume managed by Compose; the CLI uses a bind mount of `./data`.
 - The smoke script needs internet only while building the image and preparing the text-to-speech
   container; the masking step itself runs with networking disabled.
-- The CI workflow runs on GitHub-hosted x86 runners and does not publish images anywhere.
 - Out of scope: GPU/CUDA images, Kubernetes, publishing to a registry, cloud deployment.

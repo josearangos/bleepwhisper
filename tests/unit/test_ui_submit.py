@@ -1,3 +1,4 @@
+import importlib
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -71,12 +72,12 @@ def test_wrong_audio_type(store: JobStore, valid: dict[str, Path], tmp_path: Pat
 def test_too_large(
     monkeypatch: pytest.MonkeyPatch, store: JobStore, valid: dict[str, Path]
 ) -> None:
-    monkeypatch.setattr(submit, "MAX_BYTES", 1000)
+    monkeypatch.setattr(submit, "MAX_BYTES", 1024**2 // 100)
     size = valid["audio"].stat().st_size / 1024**2
-    message = rejected(store, "the limit is 100 MB", **valid)
+    message = rejected(store, "the limit is", **valid)
     assert message == (
-        f"'talk.wav' is {size:.1f} MB; the limit is 100 MB. Trim or compress the file and try "
-        "again."
+        f"'talk.wav' is {size:.1f} MB; the limit is {submit.MAX_BYTES / 1024**2:g} MB. "
+        "Trim or compress the file and try again."
     )
 
 
@@ -155,3 +156,24 @@ def test_custom_mask_overrides_preset(
     plain = create_job(store, language="Auto", preset="Low tone", custom_mask=None, **valid)
     assert plain.mask == "tone"
     assert not list(store.job_dir(plain.id).glob("mask.*"))
+
+
+def test_limits_and_model_follow_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BLEEPER_UI_MAX_UPLOAD_MB", "5")
+    monkeypatch.setenv("BLEEPER_MODEL", "base")
+    try:
+        importlib.reload(submit)
+        assert submit.MAX_BYTES == 5 * 1024 * 1024
+        assert submit.MODEL == "base"
+    finally:
+        monkeypatch.delenv("BLEEPER_UI_MAX_UPLOAD_MB")
+        monkeypatch.delenv("BLEEPER_MODEL")
+        importlib.reload(submit)
+
+
+def test_oversize_message_states_configured_limit(
+    monkeypatch: pytest.MonkeyPatch, store: JobStore, valid: dict[str, Path]
+) -> None:
+    monkeypatch.setattr(submit, "MAX_BYTES", valid["audio"].stat().st_size - 1)
+    message = rejected(store, "the limit is", **valid)
+    assert f"the limit is {submit.MAX_BYTES / 1024**2:g} MB" in message

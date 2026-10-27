@@ -45,6 +45,14 @@ cmp /tmp/native.wav data/docker.wav && diff /tmp/native.json data/docker.json &&
 Expected: `IDENTICAL`. (Run `scripts/lock.sh`-pinned versions natively for a strict comparison:
 `uv pip sync requirements.lock && uv pip install --no-deps -e .`.)
 
+**Result (2026-10-27, Apple Silicon Mac, native macOS arm64 vs Linux arm64 container, lock-synced
+Python 3.11 env, `samples/mi_audio.wav` + Colombian word list):** NOT byte-identical. Both runs
+masked 5 spans, but two span starts differ by 20 ms (5.62 vs 5.64 s, 10.94 vs 10.96 s), so the WAVs
+differ. The container is deterministic (two runs are `cmp`-identical). Cause is most likely the
+different ctranslate2 builds on macOS and Linux producing slightly different Whisper timestamps;
+strict parity holds only between Linux containers/hosts of the same architecture, which the smoke
+test (T029) covers. SC-002 was therefore not met on this macOS machine.
+
 ## V4. Linux UID override (FR-007)
 
 ```bash
@@ -73,7 +81,7 @@ uv run pytest && uv run ruff format --check && uv run ruff check
 bleeper-ui    # prints http://127.0.0.1:7860 — still loopback-only by default
 ```
 
-## V7. CI (FR-017)
+## V7. Fresh clone
 
-Push a branch: the "Docker smoke" workflow runs `scripts/smoke.sh` and goes green; the README badge
-reflects its status.
+`git clone . /tmp/bleeper-fresh`, then repeat V1–V5 in the clone to confirm nothing depends on
+untracked local files. (The CI workflow was dropped from this feature.)
