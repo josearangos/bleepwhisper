@@ -5,6 +5,8 @@ Mask forbidden words in audio files. Bleeper transcribes a recording locally wit
 you list, and replaces each one with a beep, a tone, noise or your own sound. Everything else in
 the recording stays bit-for-bit identical.
 
+![Bleeper web UI demo: upload audio, pick a mask, and get the masked result](docs/demo.gif)
+
 ![Bleeper runtime architecture: audio, words and mask flow through faster-whisper, the matcher and the masker to a masked WAV and a JSON report; the CLI and Gradio UI share the same core](docs/architecture.png)
 
 ## Install

@@ -1,0 +1,365 @@
+{
+ "url": "http://127.0.0.1:7860/",
+ "title": "Bleeper",
+ "description": "Click to try out the app!",
+ "headings": [
+  "H1: Bleeper"
+ ],
+ "copy": "Bleeper\nMask forbidden words in audio, locally and offline.\nAudio (.wav or .mp3, max 100 MB, 30 min)\nDrop File Here\n- or -\nClick to Upload\nLanguage\nForbidden words\nDrop File Here\n- or -\nClick to Upload\nMask\nClassic beep\nLow tone\nNoise burst\nPreview: Classic beep\n0:00\n0:01\n1x\nPreview: Low tone\n0:00\n0:01\n1x\nPreview: Noise burst\n0:00\n0:01\n1x\nCustom mask (optional, overrides the preset)\nDrop File Here\n- or -\nClick to Upload\nMask audio\nJobs\nID\n\t\nFile\n\t\nLanguage\n\t\nMask\n\t\nStatus\n\t\nProgress\n\t\nMasked\n\t\nCreated\n\t\nFinished\n\t\nError\n05c9f29f9998\nprueba_parcero.wav\nSpanish\nbeep\ndone\n100%\n12\n2026-10-27 12:11:38\n2026-10-27 12:11:57\nSelect a job in the table to see its result.\n·\nBuilt with Gradio\n·\nSettings",
+ "elements": [
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Drop File Here - or - Click to Upload",
+   "selector": {
+    "text": "Drop File Here - or - Click to Upload"
+   },
+   "y": 106,
+   "in_first_screen": true
+  },
+  {
+   "tag": "input",
+   "type": "text",
+   "text": "Auto",
+   "selector": "input[aria-label=\"Language\"]",
+   "y": 411,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Drop File Here - or - Click to Upload",
+   "selector": {
+    "text": "Drop File Here - or - Click to Upload"
+   },
+   "y": 466,
+   "in_first_screen": true
+  },
+  {
+   "tag": "input",
+   "type": "radio",
+   "text": "Classic beep",
+   "selector": "input[name=\"radio-1\"]",
+   "y": 152,
+   "in_first_screen": true
+  },
+  {
+   "tag": "input",
+   "type": "radio",
+   "text": "Low tone",
+   "selector": "input[name=\"radio-2\"]",
+   "y": 152,
+   "in_first_screen": true
+  },
+  {
+   "tag": "input",
+   "type": "radio",
+   "text": "Noise burst",
+   "selector": "input[name=\"radio-3\"]",
+   "y": 152,
+   "in_first_screen": true
+  },
+  {
+   "tag": "a",
+   "text": "",
+   "selector": null,
+   "href": "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/cf095155c52a5762cf7e00dc1fe6d84c7ae5b005ae1e329d40f9636654ecd81b/audio.wav",
+   "y": 205,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Download",
+   "selector": {
+    "text": "Download"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Share",
+   "selector": {
+    "text": "Share"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Adjust volume",
+   "selector": {
+    "text": "Adjust volume"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "1x",
+   "selector": {
+    "text": "1x"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip backwards by 0.05 seconds",
+   "selector": {
+    "text": "Skip backwards by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Play",
+   "selector": {
+    "text": "Play"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip forward by 0.05 seconds",
+   "selector": {
+    "text": "Skip forward by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "a",
+   "text": "",
+   "selector": null,
+   "href": "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/1466000f434e66b89fde44fdfa87b6258d8f7e5af2ea843a793c79c92b4c5cf7/audio.wav",
+   "y": 205,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Download",
+   "selector": {
+    "text": "Download"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Share",
+   "selector": {
+    "text": "Share"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Adjust volume",
+   "selector": {
+    "text": "Adjust volume"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "1x",
+   "selector": {
+    "text": "1x"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip backwards by 0.05 seconds",
+   "selector": {
+    "text": "Skip backwards by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Play",
+   "selector": {
+    "text": "Play"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip forward by 0.05 seconds",
+   "selector": {
+    "text": "Skip forward by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "a",
+   "text": "",
+   "selector": null,
+   "href": "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/d5351915281ff5927562b7da87a8789798f7423518668fd59e124d42ec77ab28/audio.wav",
+   "y": 205,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Download",
+   "selector": {
+    "text": "Download"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Share",
+   "selector": {
+    "text": "Share"
+   },
+   "y": 206,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Adjust volume",
+   "selector": {
+    "text": "Adjust volume"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "1x",
+   "selector": {
+    "text": "1x"
+   },
+   "y": 343,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip backwards by 0.05 seconds",
+   "selector": {
+    "text": "Skip backwards by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Play",
+   "selector": {
+    "text": "Play"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Skip forward by 0.05 seconds",
+   "selector": {
+    "text": "Skip forward by 0.05 seconds"
+   },
+   "y": 337,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Drop File Here - or - Click to Upload",
+   "selector": {
+    "text": "Drop File Here - or - Click to Upload"
+   },
+   "y": 403,
+   "in_first_screen": true
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Mask audio",
+   "selector": {
+    "text": "Mask audio"
+   },
+   "y": 723,
+   "in_first_screen": false
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Copy table data",
+   "selector": "button[aria-label=\"Copy table data\"]",
+   "y": 795,
+   "in_first_screen": false
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Fullscreen",
+   "selector": "button[aria-label=\"Fullscreen\"]",
+   "y": 795,
+   "in_first_screen": false
+  },
+  {
+   "tag": "a",
+   "text": "Built with Gradio",
+   "selector": {
+    "text": "Built with Gradio"
+   },
+   "href": "https://gradio.app",
+   "y": 969,
+   "in_first_screen": false
+  },
+  {
+   "tag": "button",
+   "type": "submit",
+   "text": "Settings",
+   "selector": {
+    "text": "Settings"
+   },
+   "y": 969,
+   "in_first_screen": false
+  }
+ ],
+ "internal_links": [
+  "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/cf095155c52a5762cf7e00dc1fe6d84c7ae5b005ae1e329d40f9636654ecd81b/audio.wav",
+  "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/1466000f434e66b89fde44fdfa87b6258d8f7e5af2ea843a793c79c92b4c5cf7/audio.wav",
+  "http://127.0.0.1:7860/gradio_api/file=/Users/josearangos/.bleeper/ui/tmp/d5351915281ff5927562b7da87a8789798f7423518668fd59e124d42ec77ab28/audio.wav"
+ ],
+ "page_height": 1006,
+ "inner_scroller": false,
+ "robots": {
+  "found": true,
+  "allowed": true,
+  "rule": null
+ }
+}

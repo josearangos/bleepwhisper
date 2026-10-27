@@ -1,0 +1,164 @@
+{
+  "url": "http://127.0.0.1:7860/",
+  "brand": "#c4f442",
+  "color_scheme": "dark",
+  "hide": [
+    "footer"
+  ],
+  "scenes": [
+    {
+      "id": "hook",
+      "voice": "Need to bleep bad words out of an audio file? Bleeper does it locally and offline.",
+      "min": 5.0,
+      "actions": [
+        {
+          "goto": "/"
+        },
+        {
+          "wait_for": {
+            "text": "Mask audio"
+          }
+        },
+        {
+          "pause": 0.6
+        },
+        {
+          "focus": {
+            "text": "Mask forbidden words in audio, locally and offline."
+          },
+          "zoom": 1.4,
+          "fx": 0.2
+        },
+        {
+          "pause": 2.0
+        }
+      ]
+    },
+    {
+      "id": "upload",
+      "voice": "Drop in a wav or mp3 file, pick the language, and add your list of forbidden words.",
+      "actions": [
+        {
+          "unfocus": true
+        },
+        {
+          "hover": {
+            "text": "Drop File Here",
+            "nth": 0
+          },
+          "hold": 0.8
+        },
+        {
+          "click": "input[aria-label=\"Language\"]",
+          "zoom": 1.3
+        },
+        {
+          "press": "Escape"
+        },
+        {
+          "hover": {
+            "text": "Drop File Here",
+            "nth": 1
+          },
+          "hold": 0.8
+        }
+      ]
+    },
+    {
+      "id": "mask",
+      "voice": "Choose how to mask them: a classic beep, a low tone, or a noise burst.",
+      "actions": [
+        {
+          "click": {
+            "text": "Low tone"
+          },
+          "at": "low"
+        },
+        {
+          "click": {
+            "text": "Noise burst"
+          },
+          "at": "noise",
+          "sec": 0.5
+        },
+        {
+          "click": {
+            "text": "Classic beep"
+          },
+          "zoom": false,
+          "sec": 0.5
+        }
+      ],
+      "min": 7.0
+    },
+    {
+      "id": "run",
+      "voice": "Press Mask audio, and Bleeper finds every forbidden word and covers it.",
+      "actions": [
+        {
+          "hover": {
+            "role": "button",
+            "name": "Mask audio"
+          },
+          "hold": 1.0
+        },
+        {
+          "scroll": {
+            "text": "Jobs",
+            "exact": true
+          },
+          "offset": 60
+        }
+      ]
+    },
+    {
+      "id": "jobs",
+      "voice": "Every job is tracked: done, one hundred percent, with twelve words masked.",
+      "actions": [
+        {
+          "focus": {
+            "text": "prueba_parcero.wav"
+          },
+          "zoom": 1.25,
+          "fx": 0.5
+        },
+        {
+          "pause": 1.0
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "voice": "Select a job to listen to the clean result, or download it.",
+      "actions": [
+        {
+          "unfocus": true
+        },
+        {
+          "click": {
+            "text": "prueba_parcero.wav"
+          },
+          "zoom": false
+        },
+        {
+          "wait_for": 1500
+        },
+        {
+          "scroll_by": 260
+        },
+        {
+          "pause": 1.5
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "voice": "Bleeper. Mask forbidden words in audio, locally and offline.",
+      "card": {
+        "title": "Bleeper",
+        "subtitle": "Mask forbidden words in audio, locally and offline.",
+        "url": "127.0.0.1:7860"
+      }
+    }
+  ]
+}
