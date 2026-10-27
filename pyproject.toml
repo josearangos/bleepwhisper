@@ -14,17 +14,22 @@ dependencies = [
     # `metadata_errors` to av.open(), which PyAV 19 removed. Drop this cap once that is fixed.
     "av<19",
     "numpy",
-    "soundfile",
+    "soundfile>=0.12.1",
 ]
 
 [project.optional-dependencies]
+ui = [
+    "gradio>=6,<7",
+]
 dev = [
+    "gradio>=6,<7",
     "pytest",
     "ruff",
 ]
 
 [project.scripts]
 bleeper = "bleeper.cli:main"
+bleeper-ui = "bleeper.ui.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

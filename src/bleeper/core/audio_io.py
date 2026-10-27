@@ -35,9 +35,14 @@ class AudioData:
         return int(self.samples.shape[1])
 
 
-def load_audio(path: Path, tmp_dir: Path) -> tuple[AudioData, Path]:
-    """Decode `path`; return the samples and the file the transcriber should read."""
-    path = Path(path)
+@dataclass(frozen=True)
+class AudioInfo:
+    duration: float
+    sample_rate: int
+    channels: int
+
+
+def _check_audio_path(path: Path) -> None:
     if not path.is_file():
         raise InvalidInputError(f"audio file '{path}' not found. Check the path.")
     suffix = path.suffix.lower()
@@ -46,6 +51,27 @@ def load_audio(path: Path, tmp_dir: Path) -> tuple[AudioData, Path]:
             f"unsupported audio format '{suffix or path.name}' for '{path}'. "
             "Use a .wav or .mp3 file."
         )
+
+
+def probe_audio(path: str | Path) -> AudioInfo:
+    """Read duration, sample rate and channels from the header only (no full decode)."""
+    path = Path(path)
+    _check_audio_path(path)
+    try:
+        info = sf.info(str(path))
+    except (sf.LibsndfileError, RuntimeError):
+        raise InvalidInputError(
+            f"cannot read '{path.name}': not a valid audio file. "
+            "Check that the file is not corrupt."
+        ) from None
+    return AudioInfo(float(info.duration), int(info.samplerate), int(info.channels))
+
+
+def load_audio(path: Path, tmp_dir: Path) -> tuple[AudioData, Path]:
+    """Decode `path`; return the samples and the file the transcriber should read."""
+    path = Path(path)
+    _check_audio_path(path)
+    suffix = path.suffix.lower()
     if suffix == ".wav":
         try:
             subtype = sf.info(str(path)).subtype

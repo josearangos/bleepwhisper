@@ -13,7 +13,7 @@ resampling custom masks).
 ```bash
 brew install ffmpeg            # or your platform's package manager
 uv venv && source .venv/bin/activate
-uv pip install -e .            # add ".[dev]" for pytest and ruff
+uv pip install -e .            # add ".[dev]" for pytest, ruff and Gradio
 ```
 
 The Whisper model (default `small`, ~500 MB) is downloaded once, on the first run.
@@ -125,6 +125,47 @@ Tips for slang and profanity:
   roughly real-time speed on CPU.
 - Some entries also have innocent meanings (`chimba` = "great", `sapo` = "frog") and are
   masked in every context.
+
+## Web UI
+
+A local browser UI runs the same masking as background jobs, so you can queue several files and
+keep using the page while they process.
+
+```bash
+uv pip install -e ".[ui]"      # adds Gradio
+bleeper-ui                     # or: python -m bleeper.ui
+```
+
+```text
+Bleeper UI running at http://127.0.0.1:7860
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--port PORT` | `7860` | Local port to listen on. |
+| `--data-dir DIR` | `$BLEEPER_UI_DATA` or `~/.bleeper/ui` | Where the jobs list and job files are kept. |
+
+- Upload an audio file (`.wav` or `.mp3`, up to 100 MB and 30 minutes), a words file, a language
+  and a mask (a preset you can preview, or your own sound), then press **Mask audio**.
+- Jobs run one at a time, oldest first. The table refreshes every 2 seconds; select a row to play
+  the result and download the WAV and the JSON report. Finished jobs can be deleted.
+- The output is identical to the CLI's with the `small` model and 80 ms padding.
+- The jobs list survives page refreshes and restarts. Jobs that were still queued or running when
+  the UI stopped are marked as failed ("Interrupted"); submit them again.
+- The server listens on `127.0.0.1` only, with no share link, analytics or web fonts.
+
+Data directory layout:
+
+```text
+~/.bleeper/ui/
+├── jobs.json                  # the jobs list
+├── tmp/                       # Gradio's upload cache, emptied at start-up and hourly
+└── jobs/<job id>/
+    ├── <name>_masked.wav      # result
+    └── <name>_masked.json     # report
+```
+
+Uploaded inputs are copied into the job's folder and deleted as soon as the job finishes.
 
 ## Privacy and offline use
 
