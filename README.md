@@ -7,6 +7,12 @@ the recording stays bit-for-bit identical.
 
 ![Bleeper web UI demo: upload audio, pick a mask, and get the masked result](docs/demo.gif)
 
+| English | Español |
+|---------|---------|
+| ![Bleeper launch video in English: words get bleeped, then the web UI masks an audio file](brag-output/brag.gif) | ![Video de lanzamiento de Bleeper en español: las palabras se tapan con un bleep y la interfaz web enmascara un audio](brag-output/brag-es.gif) |
+
+Full videos with sound: [`brag.mp4`](brag-output/brag.mp4) · [`brag-es.mp4`](brag-output/brag-es.mp4).
+
 ![Bleeper runtime architecture: audio, words and mask flow through faster-whisper, the matcher and the masker to a masked WAV and a JSON report; the CLI and Gradio UI share the same core](docs/architecture.png)
 
 ## Install
