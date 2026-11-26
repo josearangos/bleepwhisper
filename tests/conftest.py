@@ -99,6 +99,23 @@ def make_tone(tmp_path: Path) -> ToneFactory:
     return factory
 
 
+def make_song(seconds: float = 2.0, sample_rate: int = 16000) -> np.ndarray:
+    """Stereo float64 (n, 2): centered 1 kHz voice and 60 Hz bass, 440 Hz L / 660 Hz R wide."""
+    t = np.arange(round(seconds * sample_rate)) / sample_rate
+    voice = 0.2 * np.sin(2 * np.pi * 1000 * t)
+    bass = 0.2 * np.sin(2 * np.pi * 60 * t)
+    left = voice + bass + 0.2 * np.sin(2 * np.pi * 440 * t)
+    right = voice + bass + 0.2 * np.sin(2 * np.pi * 660 * t)
+    return np.stack([left, right], axis=1)
+
+
+@pytest.fixture
+def song_file(tmp_path: Path) -> Path:
+    path = tmp_path / "song.wav"
+    sf.write(path, make_song(), 16000, subtype="PCM_16")
+    return path
+
+
 @pytest.fixture
 def words_file(tmp_path: Path) -> WordsFactory:
     def factory(lines: list[str], name: str = "words.txt") -> Path:

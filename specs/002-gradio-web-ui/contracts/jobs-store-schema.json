@@ -23,7 +23,7 @@
             "enum": ["Auto", "Spanish", "English", "Portuguese", "French", "German", "Italian"]
           },
           "language_code": { "enum": [null, "es", "en", "pt", "fr", "de", "it"] },
-          "mask": { "type": "string", "pattern": "^(beep|tone|noise|custom: .+)$" },
+          "mask": { "type": "string", "pattern": "^(beep|tone|noise|vocal-dropout|reverse|dip|custom: .+)$" },
           "status": { "enum": ["queued", "running", "done", "failed"] },
           "progress": { "type": "integer", "minimum": 0, "maximum": 100 },
           "created_at": { "type": "string", "format": "date-time" },
@@ -31,7 +31,12 @@
           "error": { "type": ["string", "null"] },
           "masked_count": { "type": ["integer", "null"], "minimum": 0 },
           "output_file": { "type": ["string", "null"], "description": "Relative to the data dir." },
-          "report_file": { "type": ["string", "null"], "description": "Relative to the data dir." }
+          "report_file": { "type": ["string", "null"], "description": "Relative to the data dir." },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional; written only when non-empty (song-style fallback notes)."
+          }
         }
       }
     }

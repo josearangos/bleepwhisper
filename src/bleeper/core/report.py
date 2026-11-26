@@ -12,12 +12,20 @@ from bleeper.core.errors import ProcessingError
 from bleeper.core.models import ReportEntry, Span
 
 
-def to_report(spans: Sequence[Span], sample_rate: int) -> list[ReportEntry]:
+def to_report(
+    spans: Sequence[Span],
+    sample_rate: int,
+    *,
+    style: str | None = None,
+    requested_style: str | None = None,
+) -> list[ReportEntry]:
     return [
         ReportEntry(
             " ".join(span.words),
             round(span.start / sample_rate, 3),
             round(span.end / sample_rate, 3),
+            style,
+            requested_style,
         )
         for span in sorted(spans, key=lambda s: s.start)
     ]

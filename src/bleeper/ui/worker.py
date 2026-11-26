@@ -7,7 +7,7 @@ import queue
 import threading
 from pathlib import Path
 
-from bleeper.core import BleeperError, Transcriber, process_audio
+from bleeper.core import SONG_STYLES, BleeperError, Transcriber, process_audio
 from bleeper.core.transcribe import WhisperTranscriber
 from bleeper.ui.jobs import Job, JobStore, remove_inputs
 from bleeper.ui.submit import MODEL, PADDING_MS
@@ -59,7 +59,8 @@ class JobWorker:
                 job_dir / "words.txt",
                 output,
                 mask_path=job_dir / f"mask{Path(job.mask).suffix.lower()}" if custom else None,
-                preset=None if custom else job.mask,
+                preset=None if custom or job.mask in SONG_STYLES else job.mask,
+                style=job.mask if job.mask in SONG_STYLES else None,
                 model=MODEL,
                 language=job.language_code,
                 padding_ms=PADDING_MS,
@@ -71,6 +72,7 @@ class JobWorker:
                 self._relative(result.output_path),
                 self._relative(result.report_path),
                 len(result.report),
+                result.notes,
             )
         except BleeperError as exc:
             self.store.fail(job.id, str(exc))

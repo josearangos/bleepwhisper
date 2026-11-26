@@ -58,3 +58,14 @@ def test_write_report_uses_default_file_permissions(tmp_path: Path) -> None:
     finally:
         os.umask(previous)
     assert stat.S_IMODE(path.stat().st_mode) == 0o640
+
+
+def test_style_fields_only_when_set() -> None:
+    from bleeper.core.models import ReportEntry, Span
+    from bleeper.core.report import to_report
+
+    assert ReportEntry("x", 1.0, 2.0).to_dict() == {"word": "x", "start": 1.0, "end": 2.0}
+    both = ReportEntry("x", 1.0, 2.0, style="dip", requested_style="vocal-dropout").to_dict()
+    assert both["style"] == "dip" and both["requested_style"] == "vocal-dropout"
+    entries = to_report([Span(0, 16000, ("a",))], 16000, style="reverse")
+    assert all(e.style == "reverse" and e.requested_style is None for e in entries)

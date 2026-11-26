@@ -339,3 +339,144 @@ def test_callback_exception_aborts_without_output(
             progress=cancel,
         )
     assert listing(out_dir) == set()
+
+
+# --- song styles ---------------------------------------------------------------------------
+
+WORD_AT_1S = [TranscribedWord(" heck", 0.9, 1.1)]
+NOTE_MONO = "vocal-dropout needs stereo audio; this file is mono, so dip was used instead."
+NOTE_DIP_DB = "--dip-db was ignored: this file is stereo, so vocal-dropout was applied."
+
+
+def run_style(
+    src: Path, words: Path, tmp_path: Path, fake_transcriber: type, **options: object
+) -> tuple[object, np.ndarray, np.ndarray]:
+    out = tmp_path / "out.wav"
+    result = process_audio(src, words, out, transcriber=fake_transcriber(WORD_AT_1S), **options)  # type: ignore[arg-type]
+    original, _ = read(src)
+    masked, _ = read(out)
+    return result, original, masked
+
+
+def level(x: np.ndarray, freq: float, start: int, end: int) -> float:
+    seg = x[start:end].astype(np.float64)
+    t = np.arange(len(seg)) / SR
+    return abs(np.mean(seg * np.exp(-2j * np.pi * freq * t)))
+
+
+def test_vocal_dropout_end_to_end(
+    song_file: Path, words_file: Callable[..., Path], fake_transcriber: type, tmp_path: Path
+) -> None:
+    result, original, masked = run_style(
+        song_file, words_file(["heck"]), tmp_path, fake_transcriber, style="vocal-dropout"
+    )
+    start, end = round(0.82 * SR), round(1.18 * SR)  # padded span 0.82-1.18 s
+    changed = changed_indices(original, masked)
+    assert changed.min() >= start - 1 and changed.max() <= end
+    assert masked.shape == original.shape
+    a, b = round(0.85 * SR), round(1.15 * SR)
+    drop = 20 * np.log10(level(original[:, 0], 1000, a, b) / level(masked[:, 0], 1000, a, b))
+    assert drop >= 30
+    bass = level(masked[:, 0], 60, a, b) / level(original[:, 0], 60, a, b)
+    assert 0.89 <= bass <= 1.12
+    assert result.report[0].to_dict()["style"] == "vocal-dropout"  # type: ignore[attr-defined]
+    assert result.notes == ()  # type: ignore[attr-defined]
+
+
+def test_vocal_dropout_falls_back_to_dip_on_mono_and_dual_mono(
+    make_tone: Callable[..., Path],
+    words_file: Callable[..., Path],
+    fake_transcriber: type,
+    tmp_path: Path,
+) -> None:
+    for channels in (1, 2):
+        src = make_tone(f"m{channels}.wav", seconds=2.0, channels=channels)
+        result, _, masked = run_style(
+            src, words_file(["heck"]), tmp_path, fake_transcriber, style="vocal-dropout"
+        )
+        a, b = round(0.85 * SR), round(1.15 * SR)
+        assert np.all(masked[a:b] == 0)
+        assert result.report[0].to_dict()["style"] == "dip"  # type: ignore[attr-defined]
+        assert result.report[0].to_dict()["requested_style"] == "vocal-dropout"  # type: ignore[attr-defined]
+        assert result.notes == (NOTE_MONO,)  # type: ignore[attr-defined]
+
+
+def test_dip_db_ignored_on_stereo_vocal_dropout(
+    song_file: Path, words_file: Callable[..., Path], fake_transcriber: type, tmp_path: Path
+) -> None:
+    result, _, masked = run_style(
+        song_file,
+        words_file(["heck"]),
+        tmp_path,
+        fake_transcriber,
+        style="vocal-dropout",
+        dip_db=20,
+    )
+    a, b = round(0.85 * SR), round(1.15 * SR)
+    assert np.any(masked[a:b] != 0)  # not a dip
+    assert result.report[0].to_dict()["style"] == "vocal-dropout"  # type: ignore[attr-defined]
+    assert result.notes == (NOTE_DIP_DB,)  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("options", [{"style": "reverse"}, {"style": "dip", "dip_db": 20}])
+def test_reverse_and_dip_end_to_end(
+    options: dict[str, object],
+    song_file: Path,
+    words_file: Callable[..., Path],
+    fake_transcriber: type,
+    tmp_path: Path,
+) -> None:
+    result, original, masked = run_style(
+        song_file, words_file(["heck"]), tmp_path, fake_transcriber, **options
+    )
+    changed = changed_indices(original, masked)
+    assert changed.min() >= round(0.82 * SR) - 1 and changed.max() <= round(1.18 * SR)
+    assert masked.shape == original.shape
+    entry = result.report[0].to_dict()  # type: ignore[attr-defined]
+    assert entry["style"] == options["style"] and "requested_style" not in entry
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [
+        ({"style": "dip", "preset": "beep"}, "--style"),
+        ({"style": "karaoke"}, "unknown style 'karaoke'"),
+        ({"style": "dip", "dip_db": 0}, "--dip-db must be greater than 0"),
+        ({"style": "dip", "dip_db": -3}, "--dip-db must be greater than 0"),
+        ({"preset": "beep", "dip_db": 10}, "--dip-db only applies"),
+        ({"style": "reverse", "dip_db": 10}, "--dip-db only applies"),
+    ],
+)
+def test_style_option_validation(
+    options: dict[str, object],
+    message: str,
+    make_tone: Callable[..., Path],
+    words_file: Callable[..., Path],
+    fake_transcriber: type,
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(InvalidInputError, match=message):
+        process_audio(
+            make_tone(),
+            words_file(["heck"]),
+            tmp_path / "o.wav",
+            transcriber=fake_transcriber(HECK),
+            **options,  # type: ignore[arg-type]
+        )
+
+
+def test_style_with_mask_path_rejected(
+    make_tone: Callable[..., Path],
+    words_file: Callable[..., Path],
+    fake_transcriber: type,
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(InvalidInputError, match="--style"):
+        process_audio(
+            make_tone(),
+            words_file(["heck"]),
+            tmp_path / "o.wav",
+            mask_path=make_tone("mask.wav"),
+            style="dip",
+            transcriber=fake_transcriber(HECK),
+        )

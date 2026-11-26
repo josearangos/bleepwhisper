@@ -109,3 +109,29 @@ def test_custom_mask_parity(
     assert ui_out.read_bytes() == cli_out.read_bytes()
     assert ui_out.with_suffix(".json").read_bytes() == cli_out.with_suffix(".json").read_bytes()
     assert not list(ui_out.parent.glob("mask.*"))
+
+
+@pytest.mark.parametrize(
+    ("label", "style"),
+    [("Song: vocal dropout", "vocal-dropout"), ("Song: reverse", "reverse"), ("Song: dip", "dip")],
+)
+def test_song_style_parity(
+    label: str,
+    style: str,
+    monkeypatch: pytest.MonkeyPatch,
+    store: JobStore,
+    make_worker: Callable,
+    fake_transcriber: type,
+    song_file: Path,
+    words_file: Callable[..., Path],
+    wait_for: Callable[..., None],
+    tmp_path: Path,
+) -> None:
+    words = words_file(["damn"])
+    cli_fake, ui_fake = fake_transcriber(DAMN), fake_transcriber(DAMN)
+    args = [str(song_file), "--words", str(words), "--style", style]
+    cli_out = run_cli(monkeypatch, cli_fake, args, tmp_path)
+    ui_out = run_ui(store, make_worker, ui_fake, wait_for, song_file, words, "Auto", label)
+
+    assert ui_out.read_bytes() == cli_out.read_bytes()
+    assert ui_out.with_suffix(".json").read_bytes() == cli_out.with_suffix(".json").read_bytes()

@@ -189,11 +189,14 @@ def test_preset_previews(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(app, "preset_preview", spy)
     values = app.preview_values()
-    assert calls == list(MASKS.values())
-    assert len(values) == 3
-    for rate, samples in values:
+    assert calls == list(MASKS.values())[:3]
+    assert len(values) == len(MASKS) == 6
+    for rate, samples in values[:3]:
         assert rate == 44100
         assert samples.shape == (44100,)
+    for rate, samples in values[3:]:  # song styles: stereo previews
+        assert rate == 44100
+        assert samples.shape == (2 * 44100, 2)
 
 
 def test_delete_handler(

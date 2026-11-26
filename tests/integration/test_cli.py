@@ -417,3 +417,53 @@ def test_model_default_comes_from_env(
     with pytest.raises(SystemExit):
         cli.build_parser().parse_args(["--help"])
     assert "--model" in capsys.readouterr().out
+
+
+def _song_cli(
+    args: list[str], song: Path, words: Path, tmp_path: Path, use_fake: Callable[..., list[str]]
+) -> int:
+    use_fake([TranscribedWord(" heck", 0.9, 1.1)])
+    return cli.main([str(song), "--words", str(words), *args, "-o", str(tmp_path / "o.wav")])
+
+
+def test_style_runs_and_notes(
+    song_file: Path,
+    make_tone: Callable[..., Path],
+    words_file: Callable[..., Path],
+    use_fake: Callable[..., list[str]],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    words = words_file(["heck"])
+    assert _song_cli(["--style", "vocal-dropout"], song_file, words, tmp_path, use_fake) == 0
+    assert "Masked 1 span." in capsys.readouterr().out
+    assert (
+        _song_cli(["--style", "dip", "--dip-db", "20"], song_file, words, tmp_path, use_fake) == 0
+    )
+    capsys.readouterr()
+    mono = make_tone("mono.wav", seconds=2.0)
+    assert _song_cli(["--style", "vocal-dropout"], mono, words, tmp_path, use_fake) == 0
+    assert "Note: vocal-dropout needs stereo audio" in capsys.readouterr().out
+    code = _song_cli(
+        ["--style", "vocal-dropout", "--dip-db", "20"], song_file, words, tmp_path, use_fake
+    )
+    assert code == 0
+    assert "Note: --dip-db was ignored" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--style", "reverse", "--preset", "beep"],
+        ["--style", "karaoke"],
+        ["--style", "dip", "--dip-db", "0"],
+    ],
+)
+def test_style_argument_errors_exit_1(
+    args: list[str],
+    song_file: Path,
+    words_file: Callable[..., Path],
+    use_fake: Callable[..., list[str]],
+    tmp_path: Path,
+) -> None:
+    assert _song_cli(args, song_file, words_file(["heck"]), tmp_path, use_fake) == 1

@@ -151,3 +151,23 @@ def test_delete_running_refused(filled: JobStore) -> None:
         filled.delete("bbbbbbbbbbbb")
     assert filled.get("bbbbbbbbbbbb") is not None
     assert filled.job_dir("bbbbbbbbbbbb").is_dir()
+
+
+def test_notes_stored_and_backward_compatible(store: JobStore) -> None:
+    store.job_dir("aaaaaaaaaaaa").mkdir(parents=True)
+    store.add(make_job("aaaaaaaaaaaa", JobStatus.QUEUED))
+    store.start("aaaaaaaaaaaa")
+    store.finish("aaaaaaaaaaaa", "o.wav", "o.json", 1, notes=("n",))
+    job = store.get("aaaaaaaaaaaa")
+    assert job is not None and job.notes == ("n",)
+    reloaded = JobStore(store.data_dir)
+    reloaded.load()
+    loaded = reloaded.get("aaaaaaaaaaaa")
+    assert loaded is not None and loaded.notes == ("n",)
+    data = json.loads(store.jobs_file.read_text())
+    del data["jobs"][0]["notes"]
+    store.jobs_file.write_text(json.dumps(data))
+    legacy = JobStore(store.data_dir)
+    legacy.load()
+    old = legacy.get("aaaaaaaaaaaa")
+    assert old is not None and old.notes == ()

@@ -1,6 +1,20 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.0.0 → 1.0.1
+Bump rationale: PATCH. Principle III clarified: the 10 ms fade rule applies to replacement mask
+sounds; in-place transformations (feature 005 song styles) use a 10 ms crossfade with the original
+audio instead. No principle removed or redefined.
+
+Modified principles:
+- III. Audio Correctness: fade rule split into "replacement mask" and "in-place transformation".
+
+Templates requiring updates: none.
+
+Follow-up TODOs: none.
+
+Previous report (1.0.0)
+-----------------------
 Version change: (unversioned template) → 1.0.0
 Bump rationale: Initial ratification; all placeholders replaced with project-specific content.
 
@@ -62,8 +76,11 @@ core guarantees, not features.
 - Only whole-word matches count; substrings inside other words MUST NOT match.
 - Each match MUST be padded on both sides by a configurable amount (default 80 ms), clamped to the
   audio bounds, and overlapping or touching spans MUST be merged.
-- The mask MUST be fitted to the exact span duration (trimmed if longer, looped if shorter) and
-  MUST apply a 10 ms fade in and fade out.
+- A replacement mask sound MUST be fitted to the exact span duration (trimmed if longer, looped if
+  shorter) and MUST apply a 10 ms fade in and fade out.
+- An in-place transformation of the span (e.g. song styles that remove the voice, reverse or lower
+  the original audio) MUST keep the exact span duration and MUST apply a 10 ms crossfade between the
+  original and the transformed audio at both edges instead of fading to silence.
 - Output MUST preserve the input's sample rate, channel count, and total duration.
 - Samples outside masked spans MUST remain bit-for-bit unchanged relative to the decoded input.
 - The input file MUST NEVER be overwritten; output is always written to a separate path.
@@ -155,4 +172,4 @@ Quality gates for every feature:
 - Every spec, plan, and review MUST verify compliance with these principles. Any deviation MUST be
   justified explicitly in the plan's complexity tracking, or the constitution amended first.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-26
+**Version**: 1.0.1 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-11-26
