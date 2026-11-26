@@ -11,11 +11,13 @@ from bleeper.core.models import (
 )
 from bleeper.core.pipeline import process_audio
 from bleeper.core.presets import PRESETS, preset_preview
+from bleeper.core.song_styles import SONG_STYLES, style_preview
 from bleeper.core.transcribe import Transcriber
 from bleeper.core.words import load_words
 
 __all__ = [
     "PRESETS",
+    "SONG_STYLES",
     "AudioInfo",
     "BleeperError",
     "InvalidInputError",
@@ -30,4 +32,5 @@ __all__ = [
     "preset_preview",
     "probe_audio",
     "process_audio",
+    "style_preview",
 ]

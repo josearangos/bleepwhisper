@@ -12,11 +12,16 @@ from typing import Any
 import gradio as gr
 import numpy as np
 
-from bleeper.core import InvalidInputError, load_words, preset_preview
+from bleeper.core import (
+    PRESETS,
+    InvalidInputError,
+    load_words,
+    preset_preview,
+    style_preview,
+)
 from bleeper.ui.jobs import Job, JobBusyError, JobStatus, JobStore
-from bleeper.ui.submit import LANGUAGES, MASKS, create_job
+from bleeper.ui.submit import LANGUAGES, MASKS, MAX_UPLOAD_MB, create_job
 from bleeper.ui.theme import WAVEFORM, color_status
-from bleeper.ui.submit import MAX_UPLOAD_MB
 from bleeper.ui.worker import JobWorker
 
 TABLE_HEADERS = [
@@ -93,6 +98,8 @@ def render_details(store: JobStore, job_id: str | None) -> DetailsView:
             return DetailsView(f"{title}\n\n{FILES_MISSING}", None, None, None, True, signature)
         count = job.masked_count or 0
         summary = f"{title} · {count} masked word{'' if count == 1 else 's'}"
+        if job.notes:
+            summary += "\n\n" + "\n".join(job.notes)
         wav_path, json_path = str(wav.resolve()), str(report.resolve())
         return DetailsView(summary, wav_path, wav_path, json_path, True, signature)
     if job.status == JobStatus.FAILED:
@@ -116,7 +123,13 @@ def _details_updates(view: DetailsView) -> tuple[Any, ...]:
 
 def preview_values() -> list[tuple[int, np.ndarray]]:
     return [
-        (PREVIEW_RATE, preset_preview(code, sample_rate=PREVIEW_RATE)) for code in MASKS.values()
+        (
+            PREVIEW_RATE,
+            preset_preview(code, sample_rate=PREVIEW_RATE)
+            if code in PRESETS
+            else style_preview(code, sample_rate=PREVIEW_RATE),
+        )
+        for code in MASKS.values()
     ]
 
 
@@ -194,14 +207,17 @@ def build_app(store: JobStore, worker: JobWorker) -> gr.Blocks:
                 words = gr.File(label="Forbidden words", file_types=[".txt"], type="filepath")
             with gr.Column():
                 preset = gr.Radio(list(MASKS), value="Classic beep", label="Mask")
-                with gr.Row():
-                    for label, value in zip(MASKS, preview_values(), strict=True):
-                        gr.Audio(
-                            value=value,
-                            label=f"Preview: {label}",
-                            interactive=False,
-                            waveform_options=WAVEFORM,
-                        )
+                previews = list(zip(MASKS, preview_values(), strict=True))
+                n_presets = len(PRESETS)
+                for group in (previews[:n_presets], previews[n_presets:]):
+                    with gr.Row():
+                        for label, value in group:
+                            gr.Audio(
+                                value=value,
+                                label=f"Preview: {label}",
+                                interactive=False,
+                                waveform_options=WAVEFORM,
+                            )
                 custom_mask = gr.File(
                     label="Custom mask (optional, overrides the preset)",
                     file_types=[".wav", ".mp3"],

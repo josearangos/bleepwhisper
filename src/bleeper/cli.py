@@ -7,7 +7,13 @@ import sys
 from typing import NoReturn
 
 from bleeper import settings
-from bleeper.core import PRESETS, InvalidInputError, ProcessingError, process_audio
+from bleeper.core import (
+    PRESETS,
+    SONG_STYLES,
+    InvalidInputError,
+    ProcessingError,
+    process_audio,
+)
 
 EXIT_CODES = "Exit codes: 0 success, 1 invalid input, 2 processing error."
 
@@ -56,6 +62,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--preset",
         choices=PRESETS,
         help="built-in mask: beep (1 kHz), tone (400 Hz) or noise (white noise)",
+    )
+    source.add_argument(
+        "--style",
+        choices=SONG_STYLES,
+        help=(
+            "song-friendly mask: vocal-dropout (remove the voice, keep the music), "
+            "reverse (play the word backwards) or dip (lower the whole mix)"
+        ),
+    )
+    parser.add_argument(
+        "--dip-db",
+        type=float,
+        metavar="DB",
+        help="attenuation in dB for dip, a number > 0 (default: full mute)",
     )
     parser.add_argument(
         "-o",
@@ -111,6 +131,8 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             mask_path=args.mask,
             preset=args.preset,
+            style=args.style,
+            dip_db=args.dip_db,
             model=args.model,
             language=args.lang,
             padding_ms=args.padding,
@@ -130,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Masked {count} span{'s' if count != 1 else ''}.")
     else:
         print("No forbidden words found; output is identical to the input.")
+    for note in result.notes:
+        print(f"Note: {note}")
     print(f"Output: {result.output_path}")
     print(f"Report: {result.report_path}")
     return 0

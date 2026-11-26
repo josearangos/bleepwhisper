@@ -35,7 +35,7 @@ class Job:
     filename: str
     language: str
     language_code: str | None
-    mask: str  # beep/tone/noise, or `custom: <file name>`
+    mask: str  # beep/tone/noise, vocal-dropout/reverse/dip, or `custom: <file name>`
     status: JobStatus
     progress: int  # 0–100, never decreases
     created_at: str  # ISO 8601 local time with offset
@@ -44,16 +44,23 @@ class Job:
     masked_count: int | None = None
     output_file: str | None = None  # relative to the data dir
     report_file: str | None = None  # relative to the data dir
+    notes: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         data = dataclasses.asdict(self)
         data["status"] = self.status.value
+        if self.notes:
+            data["notes"] = list(self.notes)
+        else:
+            del data["notes"]
         return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Job:
         fields = {f.name for f in dataclasses.fields(cls)}
-        return cls(**{k: data[k] for k in fields} | {"status": JobStatus(data["status"])})
+        values = {k: data[k] for k in fields if k != "notes"}
+        values["notes"] = tuple(data.get("notes", ()))
+        return cls(**values | {"status": JobStatus(data["status"])})
 
 
 class JobBusyError(Exception):
@@ -163,7 +170,14 @@ class JobStore:
             if job is not None:
                 job.progress = max(job.progress, min(100, percent))
 
-    def finish(self, job_id: str, output_file: str, report_file: str, masked_count: int) -> None:
+    def finish(
+        self,
+        job_id: str,
+        output_file: str,
+        report_file: str,
+        masked_count: int,
+        notes: tuple[str, ...] = (),
+    ) -> None:
         self._update(
             job_id,
             status=JobStatus.DONE,
@@ -172,6 +186,7 @@ class JobStore:
             output_file=output_file,
             report_file=report_file,
             masked_count=masked_count,
+            notes=tuple(notes),
         )
 
     def fail(self, job_id: str, message: str) -> None:

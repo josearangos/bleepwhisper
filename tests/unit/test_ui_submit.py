@@ -177,3 +177,22 @@ def test_oversize_message_states_configured_limit(
     monkeypatch.setattr(submit, "MAX_BYTES", valid["audio"].stat().st_size - 1)
     message = rejected(store, "the limit is", **valid)
     assert f"the limit is {submit.MAX_BYTES / 1024**2:g} MB" in message
+
+
+def test_song_masks_and_job_mapping(
+    store: JobStore, make_tone: Callable[..., Path], words_file: Callable[..., Path]
+) -> None:
+    assert list(submit.MASKS.items())[3:] == [
+        ("Song: vocal dropout", "vocal-dropout"),
+        ("Song: reverse", "reverse"),
+        ("Song: dip", "dip"),
+    ]
+    job = create_job(
+        store,
+        make_tone(seconds=1.0),
+        words_file(["x"]),
+        language="Auto",
+        preset="Song: reverse",
+        custom_mask=None,
+    )
+    assert job.mask == "reverse"

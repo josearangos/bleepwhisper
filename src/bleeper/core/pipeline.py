@@ -15,6 +15,7 @@ from bleeper.core.matching import find_matches
 from bleeper.core.models import ProcessResult, ProgressCallback, ReportEntry
 from bleeper.core.presets import PRESETS, generate_preset
 from bleeper.core.report import to_report, write_report
+from bleeper.core.song_styles import SONG_STYLES, apply_styles, has_usable_stereo
 from bleeper.core.spans import build_spans
 from bleeper.core.transcribe import Transcriber, WhisperTranscriber
 from bleeper.core.words import load_words
@@ -27,6 +28,8 @@ def process_audio(
     *,
     mask_path: str | Path | None = None,
     preset: str | None = None,
+    style: str | None = None,
+    dip_db: float | None = None,
     model: str = "small",
     language: str | None = None,
     padding_ms: int = 80,
@@ -38,7 +41,17 @@ def process_audio(
     input_path, words_path, output_path = Path(input_path), Path(words_path), Path(output_path)
     mask_path = Path(mask_path) if mask_path is not None else None
     report_path = Path(report_path) if report_path is not None else output_path.with_suffix(".json")
-    _validate(input_path, words_path, output_path, report_path, mask_path, preset, padding_ms)
+    _validate(
+        input_path,
+        words_path,
+        output_path,
+        report_path,
+        mask_path,
+        preset,
+        padding_ms,
+        style,
+        dip_db,
+    )
     transcriber = transcriber if transcriber is not None else WhisperTranscriber(model)
     report_progress = _Progress(progress)
     try:
@@ -56,10 +69,16 @@ def process_audio(
         report_progress("masking", 0.85)
         matches = find_matches(transcription.words, entries)
         spans = build_spans(matches, audio.sample_rate, audio.n_samples, padding_ms)
-        samples = apply_masks(
-            audio.samples, audio.sample_rate, spans, _mask_provider(custom, preset, audio)
-        )
-        report = to_report(spans, audio.sample_rate)
+        notes: tuple[str, ...] = ()
+        if style is not None:
+            applied, requested, notes = _resolve_style(style, dip_db, audio)
+            samples = apply_styles(audio.samples, audio.sample_rate, spans, applied, dip_db)
+            report = to_report(spans, audio.sample_rate, style=applied, requested_style=requested)
+        else:
+            samples = apply_masks(
+                audio.samples, audio.sample_rate, spans, _mask_provider(custom, preset, audio)
+            )
+            report = to_report(spans, audio.sample_rate)
         report_progress("writing", 0.95)
         masked = AudioData(samples, audio.sample_rate, audio.subtype)
         _write_outputs(output_path, report_path, masked, report)
@@ -70,7 +89,7 @@ def process_audio(
     except Exception as exc:
         raise ProcessingError(f"processing failed unexpectedly ({exc}).") from exc
     report_progress("done", 1.0)
-    return ProcessResult(output_path, report_path, report, transcription.language)
+    return ProcessResult(output_path, report_path, report, transcription.language, notes)
 
 
 class _CallbackError(Exception):
@@ -106,10 +125,23 @@ def _validate(
     mask_path: Path | None,
     preset: str | None,
     padding_ms: int,
+    style: str | None = None,
+    dip_db: float | None = None,
 ) -> None:
     """Reject invalid options before any decoding or transcription."""
-    if (mask_path is None) == (preset is None):
-        raise InvalidInputError("pass exactly one of --mask or --preset.")
+    if sum(option is not None for option in (mask_path, preset, style)) != 1:
+        raise InvalidInputError("pass exactly one of --mask, --preset or --style.")
+    if style is not None and style not in SONG_STYLES:
+        raise InvalidInputError(
+            f"unknown style '{style}'. Choose one of: {', '.join(SONG_STYLES)}."
+        )
+    if dip_db is not None:
+        if dip_db <= 0:
+            raise InvalidInputError(f"--dip-db must be greater than 0, got {dip_db}.")
+        if style is None or style == "reverse":
+            raise InvalidInputError(
+                "--dip-db only applies to --style dip (or vocal-dropout on mono files)."
+            )
     if preset is not None and preset not in PRESETS:
         raise InvalidInputError(f"unknown preset '{preset}'. Choose one of: {', '.join(PRESETS)}.")
     if padding_ms < 0:
@@ -133,6 +165,24 @@ def _validate(
             raise InvalidInputError(
                 f"{label} directory '{path.parent}' does not exist. Create it first."
             )
+
+
+def _resolve_style(
+    style: str, dip_db: float | None, audio: AudioData
+) -> tuple[str, str | None, tuple[str, ...]]:
+    """Return (applied style, requested style if it fell back, notes for the user)."""
+    if style != "vocal-dropout":
+        return style, None, ()
+    if not has_usable_stereo(audio.samples):
+        note = "vocal-dropout needs stereo audio; this file is mono, so dip was used instead."
+        return "dip", "vocal-dropout", (note,)
+    if dip_db is not None:
+        return (
+            style,
+            None,
+            ("--dip-db was ignored: this file is stereo, so vocal-dropout was applied.",),
+        )
+    return style, None, ()
 
 
 def _mask_provider(

@@ -31,8 +31,8 @@ The Whisper model (default `small`, ~500 MB) is downloaded once, on the first ru
 ## Usage
 
 ```bash
-bleeper INPUT --words FILE (--mask FILE | --preset {beep,tone,noise}) -o OUTPUT
-        [--model NAME] [--lang CODE] [--padding MS] [--report FILE]
+bleeper INPUT --words FILE (--mask FILE | --preset {beep,tone,noise} | --style {vocal-dropout,reverse,dip})
+        -o OUTPUT [--dip-db DB] [--model NAME] [--lang CODE] [--padding MS] [--report FILE]
 ```
 
 ```bash
@@ -51,13 +51,15 @@ Report: out/episode-clean.json
 | `--words FILE` | — | Forbidden words file (see below). |
 | `--mask FILE` | — | Custom mask sound, looped or trimmed to each span. |
 | `--preset NAME` | — | Built-in mask: `beep` (1 kHz), `tone` (400 Hz), `noise` (white noise). |
+| `--style NAME` | — | Song-friendly mask: `vocal-dropout`, `reverse` or `dip` (see below). |
+| `--dip-db DB` | full mute | Attenuation in dB (> 0) for `dip`. |
 | `-o, --output FILE` | — | Output WAV. Replaced if it exists; must differ from `INPUT`. |
 | `--model NAME` | `small` | faster-whisper model name or local model path. |
 | `--lang CODE` | auto-detect | Spoken language, e.g. `en`, `es`. |
 | `--padding MS` | `80` | Milliseconds added before and after each match. |
 | `--report FILE` | `OUTPUT` with `.json` | JSON report path. |
 
-Exactly one of `--mask` / `--preset` is required. Run `bleeper --help` for the full help.
+Exactly one of `--mask` / `--preset` / `--style` is required. Run `bleeper --help` for the full help.
 
 ### Words file
 
@@ -72,6 +74,30 @@ shut up
 
 Matching ignores case, accents and punctuation (`Señor` matches `senor,`), and only whole words
 count (`ass` never matches `class`). Phrases match consecutive words.
+
+### Songs and radio edits
+
+Song styles transform the original recording in place instead of covering it with a beep, so the
+music keeps playing. Each span gets a 10 ms crossfade with the original at both edges.
+
+- `vocal-dropout`: removes the centered voice (mid/side processing) and keeps the stereo
+  instruments and the bass and kick (below about 150 Hz). Hard-panned instruments lose about
+  6 dB inside the span. It needs real stereo: on a mono or dual-mono file it falls back to `dip`,
+  prints a `Note:` line and records `"requested_style"` in the report.
+- `reverse`: plays the word backwards, the classic radio edit.
+- `dip`: lowers the whole mix (full mute by default, or `--dip-db 20` for 20 dB quieter).
+  `--dip-db` is ignored, with a note, when `vocal-dropout` is applied to a stereo file.
+
+```bash
+bleeper song.mp3 --words words.txt --style vocal-dropout -o out/song-clean.wav
+```
+
+```json
+[{ "word": "heck", "start": 61.2, "end": 61.78, "style": "vocal-dropout" }]
+```
+
+Tips for lyrics over loud music: pass `--lang`, try `--model medium` or larger, and review the
+report, since recognition on songs is best effort.
 
 ### Output
 

@@ -20,7 +20,14 @@ LANGUAGES: dict[str, str | None] = {
     "German": "de",
     "Italian": "it",
 }
-MASKS: dict[str, str] = {"Classic beep": "beep", "Low tone": "tone", "Noise burst": "noise"}
+MASKS: dict[str, str] = {
+    "Classic beep": "beep",
+    "Low tone": "tone",
+    "Noise burst": "noise",
+    "Song: vocal dropout": "vocal-dropout",
+    "Song: reverse": "reverse",
+    "Song: dip": "dip",
+}
 
 MAX_UPLOAD_MB = settings.max_upload_mb()
 MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024

@@ -20,6 +20,7 @@ class TranscribedWord:
 class Transcription:
     words: list[TranscribedWord]
     language: str
+    notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -41,9 +42,16 @@ class ReportEntry:
     word: str
     start: float
     end: float
+    style: str | None = None
+    requested_style: str | None = None
 
     def to_dict(self) -> dict[str, str | float]:
-        return {"word": self.word, "start": self.start, "end": self.end}
+        data: dict[str, str | float] = {"word": self.word, "start": self.start, "end": self.end}
+        if self.style is not None:
+            data["style"] = self.style
+        if self.requested_style is not None:
+            data["requested_style"] = self.requested_style
+        return data
 
 
 @dataclass(frozen=True)
@@ -52,3 +60,4 @@ class ProcessResult:
     report_path: Path
     report: list[ReportEntry]
     language: str
+    notes: tuple[str, ...] = ()
